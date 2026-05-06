@@ -1,0 +1,23 @@
+name: Docs
+
+# Phase 2 deliverable - currently a stub.
+# Will build the mkdocs site and deploy to docs.neviri.com/cli.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master, main]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stub
+        run: echo "Docs pipeline not yet implemented (Phase 2)."

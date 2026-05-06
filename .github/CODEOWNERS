@@ -1,0 +1,7 @@
+# Default owners for everything in the repo.
+# Replace with the @ArcLogiQ/cli-maintainers team once it exists.
+
+*       @Abu-hamid
+
+/.github/      @Abu-hamid
+/pyproject.toml  @Abu-hamid
