@@ -1,0 +1,23 @@
+name: Release
+
+# Phase 3 deliverable - currently a stub.
+# Will publish wheel + sdist to PyPI, build PyInstaller binaries
+# for Linux/macOS/Windows, attach to GitHub Release, and update
+# the Homebrew tap on tag push.
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stub
+        run: echo "Release pipeline not yet implemented (Phase 3)."
