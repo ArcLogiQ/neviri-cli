@@ -134,6 +134,55 @@ neviri network delete <network-id> --yes
 neviri auth logout
 ```
 
+## Shell completion
+
+`neviri completion <shell>` prints a completion script for your shell. Pipe
+it into your shell's startup file (or eval it for the current session).
+
+### bash
+
+```bash
+# Current shell only
+eval "$(neviri completion bash)"
+
+# Persistent (Linux):
+neviri completion bash > /etc/bash_completion.d/neviri
+
+# Persistent (per-user, Linux/macOS):
+neviri completion bash > ~/.local/share/bash-completion/completions/neviri
+```
+
+### zsh
+
+```bash
+# Add once to ~/.zshrc:
+eval "$(neviri completion zsh)"
+
+# Or write a static completion file (faster shell startup):
+mkdir -p ~/.zfunc
+neviri completion zsh > ~/.zfunc/_neviri
+# Then ensure ~/.zshrc has:  fpath=(~/.zfunc $fpath); autoload -U compinit; compinit
+```
+
+### fish
+
+```fish
+neviri completion fish > ~/.config/fish/completions/neviri.fish
+```
+
+### PowerShell
+
+```powershell
+# One-time, current session:
+neviri completion powershell | Out-String | Invoke-Expression
+
+# Persistent (adds to your profile):
+neviri completion powershell >> $PROFILE
+```
+
+After installing, restart your shell (or `source` the file) and tab-complete
+should work on `neviri <Tab>`, `neviri vm <Tab>`, etc.
+
 ## Exit codes
 
 Documented contract — scripts can rely on these:

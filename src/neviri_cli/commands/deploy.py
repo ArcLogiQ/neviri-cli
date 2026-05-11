@@ -151,7 +151,7 @@ def run_all_stages(
 
 def _extract_log_lines(deployment: dict[str, Any]) -> list[str]:
     log = deployment.get("build_log") or deployment.get("buildLog") or ""
-    if not isinstance(log, str):
+    if not isinstance(log, str):  # pragma: no cover - defensive type guard
         return []
     return log.splitlines()
 
@@ -227,7 +227,7 @@ def logs(
                 }
                 if statuses and statuses.issubset({"succeeded", "failed", "error"}):
                     break
-        except KeyboardInterrupt:
+        except KeyboardInterrupt:  # pragma: no cover - interactive only
             typer.echo("", err=True)  # newline after ^C
             return
     except NeviriCLIError as exc:

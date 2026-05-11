@@ -398,45 +398,58 @@ def test_lb_full_workflow(logged_in: None, runner: CliRunner) -> None:
 
 
 _LB_ERROR_PATHS: list[tuple[str, str, list[str]]] = [
+    # LB (5)
     ("GET", f"{BACKEND}{PREFIX}", ["lb", "list"]),
     ("GET", f"{BACKEND}{PREFIX}/lb-1", ["lb", "get", "lb-1"]),
-    (
-        "POST",
-        f"{BACKEND}{PREFIX}",
-        ["lb", "create", "x", "--vip-subnet", "s"],
-    ),
-    (
-        "DELETE",
-        f"{BACKEND}{PREFIX}/lb-1",
-        ["lb", "delete", "lb-1", "--yes"],
-    ),
+    ("POST", f"{BACKEND}{PREFIX}", ["lb", "create", "x", "--vip-subnet", "s"]),
+    ("PUT", f"{BACKEND}{PREFIX}/lb-1", ["lb", "update", "lb-1", "--name", "renamed"]),
+    ("DELETE", f"{BACKEND}{PREFIX}/lb-1", ["lb", "delete", "lb-1", "--yes"]),
+    # Listener (4)
     ("GET", f"{BACKEND}{PREFIX}/lb-1/listeners", ["lb", "listener", "list", "lb-1"]),
+    (
+        "GET",
+        f"{BACKEND}{PREFIX}/lb-1/listeners/ls-1",
+        ["lb", "listener", "get", "lb-1", "ls-1"],
+    ),
     (
         "POST",
         f"{BACKEND}{PREFIX}/lb-1/listeners",
         ["lb", "listener", "create", "lb-1", "n", "-p", "HTTP", "-P", "80"],
     ),
+    (
+        "DELETE",
+        f"{BACKEND}{PREFIX}/lb-1/listeners/ls-1",
+        ["lb", "listener", "delete", "lb-1", "ls-1", "--yes"],
+    ),
+    # Pool (4) + members (3)
     ("GET", f"{BACKEND}{PREFIX}/lb-1/pools", ["lb", "pool", "list", "lb-1"]),
+    ("GET", f"{BACKEND}{PREFIX}/lb-1/pools/p-1", ["lb", "pool", "get", "lb-1", "p-1"]),
     (
         "POST",
         f"{BACKEND}{PREFIX}/lb-1/pools",
         ["lb", "pool", "create", "lb-1", "p", "-p", "HTTP"],
     ),
     (
+        "DELETE",
+        f"{BACKEND}{PREFIX}/lb-1/pools/p-1",
+        ["lb", "pool", "delete", "lb-1", "p-1", "--yes"],
+    ),
+    (
+        "GET",
+        f"{BACKEND}{PREFIX}/lb-1/pools/p-1/members",
+        ["lb", "pool", "member-list", "lb-1", "p-1"],
+    ),
+    (
         "POST",
         f"{BACKEND}{PREFIX}/lb-1/pools/p-1/members",
-        [
-            "lb",
-            "pool",
-            "member-add",
-            "lb-1",
-            "p-1",
-            "-a",
-            "10.0.0.5",
-            "-P",
-            "80",
-        ],
+        ["lb", "pool", "member-add", "lb-1", "p-1", "-a", "10.0.0.5", "-P", "80"],
     ),
+    (
+        "DELETE",
+        f"{BACKEND}{PREFIX}/lb-1/pools/p-1/members/m-1",
+        ["lb", "pool", "member-remove", "lb-1", "p-1", "m-1", "--yes"],
+    ),
+    # Health monitor (3)
     (
         "POST",
         f"{BACKEND}{PREFIX}/lb-1/pools/p-1/healthmonitor",
@@ -456,7 +469,136 @@ _LB_ERROR_PATHS: list[tuple[str, str, list[str]]] = [
             "3",
         ],
     ),
+    (
+        "GET",
+        f"{BACKEND}{PREFIX}/lb-1/pools/p-1/healthmonitor/hm-1",
+        ["lb", "health-monitor", "get", "lb-1", "p-1", "hm-1"],
+    ),
+    (
+        "DELETE",
+        f"{BACKEND}{PREFIX}/lb-1/pools/p-1/healthmonitor/hm-1",
+        ["lb", "health-monitor", "delete", "lb-1", "p-1", "hm-1", "--yes"],
+    ),
 ]
+
+
+# ---------- optional-field branch coverage ----------
+
+
+@respx.mock
+def test_lb_create_with_description(logged_in: None, runner: CliRunner) -> None:
+    route = respx.post(f"{BACKEND}{PREFIX}").mock(
+        return_value=httpx.Response(201, json={"id": "lb-1"})
+    )
+    runner.invoke(app, ["lb", "create", "x", "--vip-subnet", "s", "--description", "prod web"])
+    body = route.calls.last.request.read().decode()
+    assert "prod web" in body
+
+
+@respx.mock
+def test_lb_update_with_description(logged_in: None, runner: CliRunner) -> None:
+    route = respx.put(f"{BACKEND}{PREFIX}/lb-1").mock(
+        return_value=httpx.Response(200, json={"id": "lb-1"})
+    )
+    runner.invoke(app, ["lb", "update", "lb-1", "--description", "new desc"])
+    body = route.calls.last.request.read().decode()
+    assert "new desc" in body
+
+
+@respx.mock
+def test_listener_create_with_description(logged_in: None, runner: CliRunner) -> None:
+    route = respx.post(f"{BACKEND}{PREFIX}/lb-1/listeners").mock(
+        return_value=httpx.Response(201, json={"id": "ls-1"})
+    )
+    runner.invoke(
+        app,
+        ["lb", "listener", "create", "lb-1", "n", "-p", "HTTP", "-P", "80", "-d", "ssl term"],
+    )
+    body = route.calls.last.request.read().decode()
+    assert "ssl term" in body
+
+
+@respx.mock
+def test_pool_create_with_listener_and_description(logged_in: None, runner: CliRunner) -> None:
+    route = respx.post(f"{BACKEND}{PREFIX}/lb-1/pools").mock(
+        return_value=httpx.Response(201, json={"id": "p-1"})
+    )
+    runner.invoke(
+        app,
+        [
+            "lb",
+            "pool",
+            "create",
+            "lb-1",
+            "p",
+            "-p",
+            "HTTP",
+            "--listener",
+            "ls-1",
+            "-d",
+            "backend pool",
+        ],
+    )
+    body = route.calls.last.request.read().decode()
+    assert "ls-1" in body
+    assert "backend pool" in body
+
+
+@respx.mock
+def test_member_add_with_name_and_subnet(logged_in: None, runner: CliRunner) -> None:
+    route = respx.post(f"{BACKEND}{PREFIX}/lb-1/pools/p-1/members").mock(
+        return_value=httpx.Response(201, json={"id": "m-1"})
+    )
+    runner.invoke(
+        app,
+        [
+            "lb",
+            "pool",
+            "member-add",
+            "lb-1",
+            "p-1",
+            "-a",
+            "10.0.0.5",
+            "-P",
+            "80",
+            "-n",
+            "web-01",
+            "--subnet",
+            "sub-1",
+        ],
+    )
+    body = route.calls.last.request.read().decode()
+    assert "web-01" in body
+    assert "sub-1" in body
+
+
+@respx.mock
+def test_health_monitor_create_with_name(logged_in: None, runner: CliRunner) -> None:
+    route = respx.post(f"{BACKEND}{PREFIX}/lb-1/pools/p-1/healthmonitor").mock(
+        return_value=httpx.Response(201, json={"id": "hm-1"})
+    )
+    runner.invoke(
+        app,
+        [
+            "lb",
+            "health-monitor",
+            "create",
+            "lb-1",
+            "p-1",
+            "-t",
+            "HTTP",
+            "--delay",
+            "5",
+            "--timeout",
+            "2",
+            "--retries",
+            "3",
+            "-n",
+            "primary-hm",
+        ],
+    )
+    body = route.calls.last.request.read().decode()
+    assert "primary-hm" in body
 
 
 @pytest.mark.parametrize(("method", "url", "argv"), _LB_ERROR_PATHS)
