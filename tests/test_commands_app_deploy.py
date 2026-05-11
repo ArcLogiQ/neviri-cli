@@ -94,6 +94,18 @@ def test_app_deployments(logged_in: None, runner: CliRunner) -> None:
 
 
 @respx.mock
+def test_app_upload_zip_with_progress_bar(
+    logged_in: None, runner: CliRunner, tmp_path: Path
+) -> None:
+    """Exercise the rich.Progress branch (no --no-progress flag)."""
+    zip_path = tmp_path / "withprogress.zip"
+    zip_path.write_bytes(b"PK\x03\x04" + b"X" * 4096)
+    respx.post(f"{BACKEND}{APPS}/1/upload").mock(return_value=httpx.Response(201, json={"id": 10}))
+    result = runner.invoke(app, ["app", "upload", "1", "--file", str(zip_path)])
+    assert result.exit_code == 0, result.stdout
+
+
+@respx.mock
 def test_app_upload_zip(logged_in: None, runner: CliRunner, tmp_path: Path) -> None:
     zip_path = tmp_path / "myapp.zip"
     zip_path.write_bytes(b"PK\x03\x04binary-payload")
@@ -300,6 +312,26 @@ def test_deploy_logs_follow_stops_when_done(logged_in: None, runner: CliRunner) 
     assert result.exit_code == 0, result.stdout
     assert "line 1" in result.stdout
     assert "line 2" in result.stdout
+
+
+@respx.mock
+def test_deploy_logs_500_returns_5(logged_in: None, runner: CliRunner) -> None:
+    """Errors during one-shot log fetch should map to exit 5."""
+    respx.get(f"{BACKEND}{DEPLOYMENTS}/10").mock(
+        return_value=httpx.Response(500, json={"detail": "boom"})
+    )
+    result = runner.invoke(app, ["deploy", "logs", "10"])
+    assert result.exit_code == 5
+
+
+@respx.mock
+def test_deploy_run_500_returns_5(logged_in: None, runner: CliRunner) -> None:
+    """Errors during the chained run should bubble out and exit 5."""
+    respx.post(f"{BACKEND}{DEPLOYMENTS}/10/build").mock(
+        return_value=httpx.Response(500, json={"detail": "boom"})
+    )
+    result = runner.invoke(app, ["deploy", "run", "10"])
+    assert result.exit_code == 5
 
 
 # ---------- rollback (intentionally errors) ----------

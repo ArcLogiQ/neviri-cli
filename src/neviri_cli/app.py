@@ -9,13 +9,16 @@ import typer
 from neviri_cli import __version__
 from neviri_cli.commands.app import app_app
 from neviri_cli.commands.auth import auth_app
+from neviri_cli.commands.completion import completion_command
 from neviri_cli.commands.config import config_app
+from neviri_cli.commands.credit import credit_app
 from neviri_cli.commands.db import db_app
 from neviri_cli.commands.deploy import deploy_app
 from neviri_cli.commands.floating_ip import floating_ip_app
 from neviri_cli.commands.load_balancer import lb_app
 from neviri_cli.commands.network import network_app
 from neviri_cli.commands.object_storage import object_app
+from neviri_cli.commands.payment import payment_app
 from neviri_cli.commands.subnet import subnet_app
 from neviri_cli.commands.vm import vm_app
 from neviri_cli.commands.volume import volume_app
@@ -42,6 +45,9 @@ app.add_typer(object_app, name="object")
 app.add_typer(lb_app, name="lb")
 app.add_typer(app_app, name="app")
 app.add_typer(deploy_app, name="deploy")
+app.add_typer(credit_app, name="credit")
+app.add_typer(payment_app, name="payment")
+app.command("completion")(completion_command)
 
 
 def _version_callback(value: bool) -> None:

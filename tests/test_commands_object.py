@@ -171,6 +171,30 @@ def test_object_put_with_custom_content_type(
     assert b"application/json" in body
 
 
+@respx.mock
+def test_object_put_with_progress_bar(logged_in: None, runner: CliRunner, tmp_path: Path) -> None:
+    """Exercise the rich.Progress branch (no --no-progress)."""
+    f = tmp_path / "withprogress.bin"
+    f.write_bytes(b"X" * 4096)
+    respx.put(f"{BACKEND}{PREFIX}/containers/b1/objects/withprogress.bin").mock(
+        return_value=httpx.Response(200, json={"etag": "abc"})
+    )
+    result = runner.invoke(app, ["object", "put", "b1", "withprogress.bin", "--file", str(f)])
+    assert result.exit_code == 0, result.stdout
+
+
+@respx.mock
+def test_object_get_with_progress_bar(logged_in: None, runner: CliRunner, tmp_path: Path) -> None:
+    """Exercise the rich.Progress branch for downloads."""
+    respx.get(f"{BACKEND}{PREFIX}/containers/b1/objects/file.bin").mock(
+        return_value=httpx.Response(200, content=b"binary-data" * 100)
+    )
+    dest = tmp_path / "out.bin"
+    result = runner.invoke(app, ["object", "get", "b1", "file.bin", "-o", str(dest)])
+    assert result.exit_code == 0, result.stdout
+    assert dest.exists()
+
+
 def test_object_put_missing_file(isolated_home: Path, runner: CliRunner) -> None:
     store_token("default", "test-token")
     result = runner.invoke(

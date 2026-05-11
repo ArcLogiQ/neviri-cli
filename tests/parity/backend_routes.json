@@ -1,0 +1,952 @@
+[
+  {
+    "method": "GET",
+    "path": "/api/v1/apps",
+    "source": "app/routers/apps.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/apps",
+    "source": "app/routers/apps.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/apps/{app_id}",
+    "source": "app/routers/apps.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/apps/{app_id}",
+    "source": "app/routers/apps.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/apps/{app_id}/deployments",
+    "source": "app/routers/apps.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/apps/{app_id}/env",
+    "source": "app/routers/apps.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/apps/{app_id}/env",
+    "source": "app/routers/apps.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/apps/{app_id}/env/{env_id}",
+    "source": "app/routers/apps.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/apps/{app_id}/upload",
+    "source": "app/routers/apps.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/backup/automatic/cost",
+    "source": "app/routers/backup.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/backup/automatic/list",
+    "source": "app/routers/backup.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/backup/automatic/schedule",
+    "source": "app/routers/backup.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/backup/automatic/unschedule",
+    "source": "app/routers/backup.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/backup/browse/{backup_id}",
+    "source": "app/routers/backup.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/backup/create",
+    "source": "app/routers/backup.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/backup/delete/{backup_id}",
+    "source": "app/routers/backup.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/backup/details/{backup_id}",
+    "source": "app/routers/backup.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/backup/download-data/{backup_id}",
+    "source": "app/routers/backup.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/backup/download/{backup_id}",
+    "source": "app/routers/backup.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/backup/list",
+    "source": "app/routers/backup.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/backup/preview/{backup_id}",
+    "source": "app/routers/backup.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/backup/register",
+    "source": "app/routers/backup.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/block-storage/snapshots",
+    "source": "app/routers/block_storage.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/block-storage/snapshots",
+    "source": "app/routers/block_storage.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/block-storage/snapshots/{snapshot_id}",
+    "source": "app/routers/block_storage.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/block-storage/snapshots/{snapshot_id}",
+    "source": "app/routers/block_storage.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/block-storage/volumes",
+    "source": "app/routers/block_storage.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/block-storage/volumes",
+    "source": "app/routers/block_storage.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/block-storage/volumes/{volume_id}",
+    "source": "app/routers/block_storage.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/block-storage/volumes/{volume_id}",
+    "source": "app/routers/block_storage.py"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/block-storage/volumes/{volume_id}",
+    "source": "app/routers/block_storage.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/block-storage/volumes/{volume_id}/attach",
+    "source": "app/routers/block_storage.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/block-storage/volumes/{volume_id}/detach",
+    "source": "app/routers/block_storage.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/blog/admin/{blog_id}",
+    "source": "app/routers/blog.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/blog/all",
+    "source": "app/routers/blog.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/blog/create",
+    "source": "app/routers/blog.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/blog/public",
+    "source": "app/routers/blog.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/blog/slug/{slug}",
+    "source": "app/routers/blog.py"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/blog/update/{blog_id}",
+    "source": "app/routers/blog.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/blog/{blog_id}",
+    "source": "app/routers/blog.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/blog/{blog_id}/interaction",
+    "source": "app/routers/blog.py"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/blog/{blog_id}/publish",
+    "source": "app/routers/blog.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/compute/flavors",
+    "source": "app/routers/compute.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/compute/images",
+    "source": "app/routers/compute.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/compute/servers",
+    "source": "app/routers/compute.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/compute/servers",
+    "source": "app/routers/compute.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/compute/servers/{server_id}",
+    "source": "app/routers/compute.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/compute/servers/{server_id}",
+    "source": "app/routers/compute.py"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/compute/servers/{server_id}",
+    "source": "app/routers/compute.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/compute/servers/{server_id}/action",
+    "source": "app/routers/compute.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/compute/servers/{server_id}/console",
+    "source": "app/routers/compute.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/compute/servers/{server_id}/resize",
+    "source": "app/routers/compute.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/compute/servers/{server_id}/resize/confirm",
+    "source": "app/routers/compute.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/compute/servers/{server_id}/resize/revert",
+    "source": "app/routers/compute.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/credits/balance",
+    "source": "app/routers/credits.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/credits/status",
+    "source": "app/routers/credits.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/credits/transactions",
+    "source": "app/routers/credits.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/database/all-databases",
+    "source": "app/routers/database.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/database/create-deployment",
+    "source": "app/routers/database.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/database/delete-database/{database_id}",
+    "source": "app/routers/database.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/database/iops/{cluster_name}",
+    "source": "app/routers/database.py"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/database/scale-database/{database_id}",
+    "source": "app/routers/database.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/database/status/{database_id}",
+    "source": "app/routers/database.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/database/usage-report",
+    "source": "app/routers/database.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/database/usage/{cluster_name}",
+    "source": "app/routers/database.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/deployments/{deployment_id}",
+    "source": "app/routers/deployments.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/deployments/{deployment_id}/build",
+    "source": "app/routers/deployments.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/deployments/{deployment_id}/deploy",
+    "source": "app/routers/deployments.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/deployments/{deployment_id}/ingress",
+    "source": "app/routers/deployments.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/deployments/{deployment_id}/manifests",
+    "source": "app/routers/deployments.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/deployments/{deployment_id}/service",
+    "source": "app/routers/deployments.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/health",
+    "source": "app/routers/health.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/health/ready",
+    "source": "app/routers/health.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/image/upload-azure",
+    "source": "app/routers/image_upload.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/image/upload-azure-base64",
+    "source": "app/routers/image_upload.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/internal/credits/grant",
+    "source": "app/routers/internal_credits.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/load-balancers",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/load-balancers",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/load-balancers/{lb_id}",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/load-balancers/{lb_id}",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/load-balancers/{lb_id}",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/load-balancers/{lb_id}/listeners",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/load-balancers/{lb_id}/listeners",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/load-balancers/{lb_id}/listeners/{listener_id}",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/load-balancers/{lb_id}/listeners/{listener_id}",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/load-balancers/{lb_id}/listeners/{listener_id}",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/load-balancers/{lb_id}/pools",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/load-balancers/{lb_id}/pools",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/load-balancers/{lb_id}/pools/{pool_id}",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/load-balancers/{lb_id}/pools/{pool_id}",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/load-balancers/{lb_id}/pools/{pool_id}",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/load-balancers/{lb_id}/pools/{pool_id}/healthmonitor",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/load-balancers/{lb_id}/pools/{pool_id}/healthmonitor/{hm_id}",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/load-balancers/{lb_id}/pools/{pool_id}/healthmonitor/{hm_id}",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/load-balancers/{lb_id}/pools/{pool_id}/healthmonitor/{hm_id}",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/load-balancers/{lb_id}/pools/{pool_id}/members",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/load-balancers/{lb_id}/pools/{pool_id}/members",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/load-balancers/{lb_id}/pools/{pool_id}/members/{member_id}",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/load-balancers/{lb_id}/pools/{pool_id}/members/{member_id}",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/load-balancers/{lb_id}/pools/{pool_id}/members/{member_id}",
+    "source": "app/routers/load_balancers.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/mysql-backup/automatic/list",
+    "source": "app/routers/mysql_backup.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/mysql-backup/automatic/schedule",
+    "source": "app/routers/mysql_backup.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/mysql-backup/automatic/unschedule",
+    "source": "app/routers/mysql_backup.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/mysql-backup/browse/{backup_id}",
+    "source": "app/routers/mysql_backup.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/mysql-backup/create",
+    "source": "app/routers/mysql_backup.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/mysql-backup/delete/{backup_id}",
+    "source": "app/routers/mysql_backup.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/mysql-backup/details/{backup_id}",
+    "source": "app/routers/mysql_backup.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/mysql-backup/download-data/{backup_id}",
+    "source": "app/routers/mysql_backup.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/mysql-backup/download/{backup_id}",
+    "source": "app/routers/mysql_backup.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/mysql-backup/list",
+    "source": "app/routers/mysql_backup.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/mysql-backup/preview/{backup_id}",
+    "source": "app/routers/mysql_backup.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/mysql/all-mysql",
+    "source": "app/routers/mysql_database.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/mysql/create-mysql",
+    "source": "app/routers/mysql_database.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/mysql/delete-mysql/{database_id}",
+    "source": "app/routers/mysql_database.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/mysql/flavors",
+    "source": "app/routers/mysql_database.py"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/mysql/scale-mysql/{database_id}",
+    "source": "app/routers/mysql_database.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/mysql/status-mysql/{database_id}",
+    "source": "app/routers/mysql_database.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/network/floating-ips",
+    "source": "app/routers/networking/floating_ips.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/network/floating-ips",
+    "source": "app/routers/networking/floating_ips.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/network/floating-ips/{floating_ip_id}",
+    "source": "app/routers/networking/floating_ips.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/network/floating-ips/{floating_ip_id}",
+    "source": "app/routers/networking/floating_ips.py"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/network/floating-ips/{floating_ip_id}/associate",
+    "source": "app/routers/networking/floating_ips.py"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/network/floating-ips/{floating_ip_id}/disassociate",
+    "source": "app/routers/networking/floating_ips.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/network/networks",
+    "source": "app/routers/networking/networks.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/network/networks",
+    "source": "app/routers/networking/networks.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/network/networks/{network_id}",
+    "source": "app/routers/networking/networks.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/network/networks/{network_id}",
+    "source": "app/routers/networking/networks.py"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/network/networks/{network_id}",
+    "source": "app/routers/networking/networks.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/network/routers",
+    "source": "app/routers/networking/routers.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/network/routers",
+    "source": "app/routers/networking/routers.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/network/routers/{router_id}",
+    "source": "app/routers/networking/routers.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/network/routers/{router_id}",
+    "source": "app/routers/networking/routers.py"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/network/routers/{router_id}",
+    "source": "app/routers/networking/routers.py"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/network/routers/{router_id}/add-interface",
+    "source": "app/routers/networking/routers.py"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/network/routers/{router_id}/remove-interface",
+    "source": "app/routers/networking/routers.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/network/subnets",
+    "source": "app/routers/networking/subnets.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/network/subnets",
+    "source": "app/routers/networking/subnets.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/network/subnets/{subnet_id}",
+    "source": "app/routers/networking/subnets.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/network/subnets/{subnet_id}",
+    "source": "app/routers/networking/subnets.py"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/network/subnets/{subnet_id}",
+    "source": "app/routers/networking/subnets.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/object-storage/containers",
+    "source": "app/routers/object_storage.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/object-storage/containers",
+    "source": "app/routers/object_storage.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/object-storage/containers/{container_name}",
+    "source": "app/routers/object_storage.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/object-storage/containers/{container_name}",
+    "source": "app/routers/object_storage.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/object-storage/containers/{container_name}/objects",
+    "source": "app/routers/object_storage.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/object-storage/containers/{container_name}/objects/{object_name:path}",
+    "source": "app/routers/object_storage.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/object-storage/containers/{container_name}/objects/{object_name:path}",
+    "source": "app/routers/object_storage.py"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/object-storage/containers/{container_name}/objects/{object_name:path}",
+    "source": "app/routers/object_storage.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/payment-method/create-setup-intent",
+    "source": "app/routers/payment_method.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/payment-method/payment-method-status",
+    "source": "app/routers/payment_method.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/payment-method/remove-payment-method",
+    "source": "app/routers/payment_method.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/payment-method/save-payment-method",
+    "source": "app/routers/payment_method.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/payment-method/setup-customer",
+    "source": "app/routers/payment_method.py"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/payment-method/update-payment-method",
+    "source": "app/routers/payment_method.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/payment/cluster-paid-total/{cluster_name}",
+    "source": "app/routers/payment.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/payment/history",
+    "source": "app/routers/payment.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/payment/invoice/{payment_id}",
+    "source": "app/routers/payment.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/payment/monthly-invoice",
+    "source": "app/routers/payment.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/payment/monthly-summary",
+    "source": "app/routers/payment.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/payment/razorpay/create-bulk-order",
+    "source": "app/routers/payment.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/payment/razorpay/create-order",
+    "source": "app/routers/payment.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/payment/razorpay/verify-payment",
+    "source": "app/routers/payment.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/payment/receipt/{payment_id}",
+    "source": "app/routers/payment.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/payment/summary",
+    "source": "app/routers/payment.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/postgres-backup/automatic/list",
+    "source": "app/routers/postgres_backup.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/postgres-backup/automatic/schedule",
+    "source": "app/routers/postgres_backup.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/postgres-backup/automatic/unschedule",
+    "source": "app/routers/postgres_backup.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/postgres-backup/create",
+    "source": "app/routers/postgres_backup.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/postgres-backup/delete/{backup_id}",
+    "source": "app/routers/postgres_backup.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/postgres-backup/details/{backup_id}",
+    "source": "app/routers/postgres_backup.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/postgres-backup/download/{backup_id}",
+    "source": "app/routers/postgres_backup.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/postgres-backup/list",
+    "source": "app/routers/postgres_backup.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/postgres/all-postgres",
+    "source": "app/routers/postgres_database.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/postgres/create-postgres",
+    "source": "app/routers/postgres_database.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/postgres/delete-postgres/{database_id}",
+    "source": "app/routers/postgres_database.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/postgres/flavors",
+    "source": "app/routers/postgres_database.py"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/postgres/scale-postgres/{database_id}",
+    "source": "app/routers/postgres_database.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/postgres/status-postgres/{database_id}",
+    "source": "app/routers/postgres_database.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/restore/cancel/{backup_id}",
+    "source": "app/routers/restore.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/restore/history",
+    "source": "app/routers/restore.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/restore/initiate",
+    "source": "app/routers/restore.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/restore/status/{backup_id}",
+    "source": "app/routers/restore.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/support/send-email",
+    "source": "app/routers/support.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/vm/all",
+    "source": "app/routers/vm.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/vm/create",
+    "source": "app/routers/vm.py"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/vm/{vm_id}",
+    "source": "app/routers/vm.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/vm/{vm_id}",
+    "source": "app/routers/vm.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/vm/{vm_id}/start",
+    "source": "app/routers/vm.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/vm/{vm_id}/status",
+    "source": "app/routers/vm.py"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/vm/{vm_id}/stop",
+    "source": "app/routers/vm.py"
+  }
+]
