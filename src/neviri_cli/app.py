@@ -9,6 +9,7 @@ import typer
 from neviri_cli import __version__
 from neviri_cli.commands.auth import auth_app
 from neviri_cli.commands.config import config_app
+from neviri_cli.commands.db import db_app
 from neviri_cli.commands.floating_ip import floating_ip_app
 from neviri_cli.commands.network import network_app
 from neviri_cli.commands.subnet import subnet_app
@@ -32,6 +33,7 @@ app.add_typer(volume_app, name="volume")
 app.add_typer(network_app, name="network")
 app.add_typer(subnet_app, name="subnet")
 app.add_typer(floating_ip_app, name="floating-ip")
+app.add_typer(db_app, name="db")
 
 
 def _version_callback(value: bool) -> None:
