@@ -63,5 +63,8 @@ Thumbs.db
 .env.local
 *.local
 
-# Build artifacts from PyInstaller (Phase 3)
-*.spec
+# PyInstaller intermediate dir (build/ and dist/ are already in distribution
+# section above; pyinstaller.spec is committed and not ignored).
+
+# mkdocs build output
+site/

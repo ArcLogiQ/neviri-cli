@@ -1,17 +1,45 @@
 # Getting started with `neviri-cli`
 
-This guide is the alpha dogfood walkthrough for Phase 1. It mirrors the demo
-script run during the go/no-go review.
+This guide is the Phase 2 beta walkthrough. It mirrors the demo run during
+the go/no-go review.
 
 ## 1. Install
 
-For the `0.1.0a1` internal alpha you install from the private index:
+### Option A — Standalone binary (no Python required)
+
+Grab the binary for your OS from the
+[GitHub Releases page](https://github.com/ArcLogiQ/neviri-cli/releases),
+make it executable, and put it on your `PATH`:
+
+=== "Linux / macOS"
+
+    ```bash
+    # Replace <ARCH> with x86_64 or arm64 (macOS only)
+    curl -L -o neviri \
+      https://github.com/ArcLogiQ/neviri-cli/releases/latest/download/neviri-linux-x86_64
+    chmod +x neviri
+    sudo mv neviri /usr/local/bin/
+    ```
+
+=== "Windows (PowerShell)"
+
+    ```powershell
+    Invoke-WebRequest `
+      -Uri https://github.com/ArcLogiQ/neviri-cli/releases/latest/download/neviri-windows-x86_64.exe `
+      -OutFile neviri.exe
+    # Then move neviri.exe somewhere on $env:Path
+    ```
+
+Binaries are self-contained — no Python install required. Approximate sizes:
+~20MB on Windows, ~40-60MB on Linux/macOS.
+
+### Option B — From PyPI
 
 ```bash
-pip install --index-url <private-index-url> "neviri-cli==0.1.0a1"
+pip install --index-url https://test.pypi.org/simple/ "neviri-cli==0.9.0b1"
 ```
 
-Or from a clone of the source repo:
+### Option C — From source
 
 ```bash
 git clone https://github.com/ArcLogiQ/neviri-cli.git
@@ -21,11 +49,11 @@ source .venv/bin/activate     # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
 ```
 
-Verify:
+Verify any path with:
 
 ```bash
 neviri --version
-# neviri 0.1.0a1
+# neviri 0.9.0b1
 ```
 
 ## 2. Configure your environment

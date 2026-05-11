@@ -20,6 +20,7 @@ from neviri_cli.commands.network import network_app
 from neviri_cli.commands.object_storage import object_app
 from neviri_cli.commands.payment import payment_app
 from neviri_cli.commands.subnet import subnet_app
+from neviri_cli.commands.version import version_command
 from neviri_cli.commands.vm import vm_app
 from neviri_cli.commands.volume import volume_app
 from neviri_cli.config import load_config
@@ -48,6 +49,7 @@ app.add_typer(deploy_app, name="deploy")
 app.add_typer(credit_app, name="credit")
 app.add_typer(payment_app, name="payment")
 app.command("completion")(completion_command)
+app.command("version")(version_command)
 
 
 def _version_callback(value: bool) -> None:
