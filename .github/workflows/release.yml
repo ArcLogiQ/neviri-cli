@@ -120,9 +120,86 @@ jobs:
           path: dist/${{ matrix.artifact }}${{ matrix.ext }}
           retention-days: 7
 
+  sbom:
+    name: Generate CycloneDX SBOM
+    needs: [build-dists]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install project + SBOM tool
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[security]"
+
+      - name: Generate SBOM (CycloneDX JSON)
+        # cyclonedx-py reads the active venv to enumerate dependencies. Output
+        # is a portable CycloneDX 1.5 SBOM that auditors and SCA tools accept.
+        run: |
+          cyclonedx-py environment --output-format json --output-file neviri-cli-sbom.json
+          ls -lh neviri-cli-sbom.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: neviri-cli-sbom.json
+          retention-days: 90
+
+  sign-artifacts:
+    name: Sign artifacts (Sigstore keyless)
+    needs: [build-dists, build-binaries, sbom]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: read
+      id-token: write  # required for Sigstore OIDC keyless signing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+          merge-multiple: true
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: "v2.4.0"
+
+      - name: Sign every release artifact
+        # Keyless signing uses the GitHub Actions OIDC token to identify the
+        # signer. No long-lived keys live in the repo. Produces *.sig and *.crt
+        # files alongside each artifact.
+        run: |
+          set -e
+          for f in artifacts/*; do
+            if [ -f "$f" ]; then
+              echo "Signing $f"
+              cosign sign-blob --yes \
+                --output-signature "${f}.sig" \
+                --output-certificate "${f}.crt" \
+                "$f"
+            fi
+          done
+          ls -lh artifacts/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signatures
+          path: |
+            artifacts/*.sig
+            artifacts/*.crt
+          retention-days: 90
+
   github-release:
     name: Attach to GitHub Release
-    needs: [build-dists, build-binaries]
+    needs: [build-dists, build-binaries, sbom, sign-artifacts]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:

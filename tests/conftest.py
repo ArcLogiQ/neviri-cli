@@ -29,4 +29,7 @@ def isolated_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[P
     monkeypatch.setenv("NEVIRI_CREDENTIALS", str(creds_path))
     monkeypatch.setenv("NEVIRI_TOKEN_STORE", "file")
     monkeypatch.delenv("NEVIRI_API_TOKEN", raising=False)
+    # Always disable telemetry in tests so we never accidentally send
+    # anything to the real endpoint and tests don't depend on TTY state.
+    monkeypatch.setenv("NEVIRI_TELEMETRY", "disable")
     yield tmp_path

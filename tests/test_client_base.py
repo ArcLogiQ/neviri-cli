@@ -248,3 +248,149 @@ def test_max_retries_clamped_to_zero() -> None:
     c = BaseClient(BASE, max_retries=-5)
     assert c._max_retries == 0  # type: ignore[reportPrivateUsage]
     c.close()
+
+
+# ---------- --debug request/response logging ----------
+
+
+@respx.mock
+def test_debug_logs_request_and_response_to_stderr(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    respx.get(f"{BASE}/v1/hello").mock(
+        return_value=httpx.Response(
+            200,
+            json={"ok": True},
+            headers={"X-Request-ID": "req-1"},
+        )
+    )
+    client = BaseClient(BASE, token="secret-bearer", debug=True)
+    try:
+        out = client.get("/v1/hello")
+    finally:
+        client.close()
+    assert out == {"ok": True}
+    captured = capsys.readouterr()
+    # No debug output should ever land on stdout (so JSON pipelines stay clean)
+    assert captured.out == ""
+    # Both request and response lines on stderr
+    assert "--> GET https://api.example.test/v1/hello" in captured.err
+    assert "<-- 200" in captured.err
+    # Body of the response shows up
+    assert '"ok": true' in captured.err
+
+
+@respx.mock
+def test_debug_redacts_authorization_header(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    respx.get(f"{BASE}/v1/me").mock(return_value=httpx.Response(200, json={"id": 1}))
+    client = BaseClient(BASE, token="super-secret-token", debug=True)
+    try:
+        client.get("/v1/me")
+    finally:
+        client.close()
+    captured = capsys.readouterr()
+    assert "super-secret-token" not in captured.err
+    assert "Bearer" not in captured.err  # whole value gets replaced
+    assert "***" in captured.err
+
+
+@respx.mock
+def test_debug_redacts_password_in_request_body(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    respx.post(f"{BASE}/v1/login").mock(return_value=httpx.Response(200, json={"token": "abc"}))
+    client = BaseClient(BASE, debug=True)
+    try:
+        client.post("/v1/login", json={"email": "alice@example.com", "password": "hunter2"})
+    finally:
+        client.close()
+    captured = capsys.readouterr()
+    assert "hunter2" not in captured.err
+    assert "alice@example.com" in captured.err  # email NOT sensitive
+    assert "***" in captured.err
+
+
+@respx.mock
+def test_debug_redacts_tokens_in_response_body(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    respx.post(f"{BASE}/v1/login").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "user": {"email": "alice@example.com", "name": "Alice"},
+                "access_token": "AT-leaky",
+                "refresh_token": "RT-leaky",
+                "token": "scoped",
+            },
+        )
+    )
+    client = BaseClient(BASE, debug=True)
+    try:
+        client.post("/v1/login", json={"email": "alice@example.com"})
+    finally:
+        client.close()
+    captured = capsys.readouterr()
+    assert "AT-leaky" not in captured.err
+    assert "RT-leaky" not in captured.err
+    # bare `token` is still shown (used by `neviri auth token`)
+    assert "scoped" in captured.err
+    assert "Alice" in captured.err
+    assert "alice@example.com" in captured.err
+
+
+@respx.mock
+def test_debug_redacts_set_cookie_in_response_headers(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    respx.get(f"{BASE}/v1/x").mock(
+        return_value=httpx.Response(
+            200,
+            json={"ok": True},
+            headers={"Set-Cookie": "session=secret-cookie-value; HttpOnly"},
+        )
+    )
+    client = BaseClient(BASE, debug=True)
+    try:
+        client.get("/v1/x")
+    finally:
+        client.close()
+    captured = capsys.readouterr()
+    assert "secret-cookie-value" not in captured.err
+    assert "***" in captured.err
+
+
+@respx.mock
+def test_debug_off_by_default_emits_nothing(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    respx.get(f"{BASE}/v1/q").mock(return_value=httpx.Response(200, json={"ok": True}))
+    client = BaseClient(BASE, token="t")
+    try:
+        client.get("/v1/q")
+    finally:
+        client.close()
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert captured.out == ""
+
+
+@respx.mock
+def test_debug_truncates_long_non_json_response_body(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    big = "A" * 2000
+    respx.get(f"{BASE}/v1/blob").mock(
+        return_value=httpx.Response(200, text=big, headers={"Content-Type": "text/plain"})
+    )
+    client = BaseClient(BASE, debug=True)
+    try:
+        client.get("/v1/blob")
+    finally:
+        client.close()
+    captured = capsys.readouterr()
+    assert "[truncated]" in captured.err
+    # Should NOT contain the full 2000-A blob
+    assert "A" * 1500 not in captured.err

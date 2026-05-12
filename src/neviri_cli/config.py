@@ -56,6 +56,11 @@ class CLIConfig(BaseModel):
 
     default_profile: str = "default"
     profiles: dict[str, ProfileConfig] = Field(default_factory=lambda: {"default": ProfileConfig()})
+    # Telemetry is account-wide, not per-profile.
+    # `None` = not yet asked; `True`/`False` = the user's persisted choice.
+    # See neviri_cli/utils/telemetry.py for what gets sent.
+    telemetry: bool | None = None
+    install_id: str | None = None
 
 
 def get_config_path() -> Path:

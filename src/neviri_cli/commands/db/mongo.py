@@ -13,7 +13,7 @@ mongo_app = build_engine_app(
         backend_type="mongodb",
         default_flavor="M10",
         user_field="mongo_user",
-        pass_field="mongo_pass",
+        pass_field="mongo_pass",  # nosec B106 - JSON field name from API, not a password value
         has_region=False,
         # The MongoDB router does not expose `GET /flavors` — clients use the
         # platform docs / web UI to pick a tier.
