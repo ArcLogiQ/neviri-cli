@@ -73,22 +73,34 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Install
+      - name: Install pip-audit only
+        # Don't install neviri-cli itself — we audit the DECLARED runtime deps
+        # via a generated requirements file. This avoids the editable / not-yet-
+        # on-PyPI conflict with `pip-audit --strict`.
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[security]"
+          pip install pip-audit
+
+      - name: Extract runtime deps from pyproject.toml
+        run: |
+          python <<'PY'
+          import tomllib
+          with open("pyproject.toml", "rb") as f:
+              deps = tomllib.load(f)["project"]["dependencies"]
+          with open("audit-requirements.txt", "w") as f:
+              f.write("\n".join(deps) + "\n")
+          PY
+          cat audit-requirements.txt
 
       - name: Run pip-audit
-        # pip-audit reads installed-package metadata from the venv, so we audit
-        # the EXACT resolution that would ship in a release. Non-zero exit if
-        # any vulnerable dep is found.
-        # --skip-editable: don't audit `neviri-cli` itself against PyPI; it's
-        # installed editable from this checkout (and isn't published yet).
-        run: pip-audit --format columns --strict --skip-editable
+        # --strict: exit nonzero on any unaudited dep too (defense in depth)
+        run: pip-audit --format columns --strict --requirement audit-requirements.txt
 
       - name: Run pip-audit (JSON report)
         if: always()
-        run: pip-audit --format json --output pip-audit-report.json --skip-editable || true
+        run: |
+          pip-audit --format json --output pip-audit-report.json \
+            --requirement audit-requirements.txt || true
 
       - uses: actions/upload-artifact@v4
         if: always()
