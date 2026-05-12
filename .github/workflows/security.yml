@@ -82,11 +82,13 @@ jobs:
         # pip-audit reads installed-package metadata from the venv, so we audit
         # the EXACT resolution that would ship in a release. Non-zero exit if
         # any vulnerable dep is found.
-        run: pip-audit --format columns --strict
+        # --skip-editable: don't audit `neviri-cli` itself against PyPI; it's
+        # installed editable from this checkout (and isn't published yet).
+        run: pip-audit --format columns --strict --skip-editable
 
       - name: Run pip-audit (JSON report)
         if: always()
-        run: pip-audit --format json --output pip-audit-report.json || true
+        run: pip-audit --format json --output pip-audit-report.json --skip-editable || true
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -102,7 +104,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Run Trivy
-        uses: aquasecurity/trivy-action@0.24.0
+        # Pinned to a known-good release tag. Recent tags use the `v` prefix
+        # (https://github.com/aquasecurity/trivy-action/releases).
+        uses: aquasecurity/trivy-action@v0.30.0
         with:
           scan-type: fs
           scan-ref: .
