@@ -120,11 +120,15 @@ jobs:
         # whose tagging is inconsistent (different trivy-action versions pin
         # setup-trivy refs that don't always exist as tags). Pinning the trivy
         # version here keeps the scan reproducible.
+        #
+        # NOTE: `curl -f` makes a 404 fail loudly instead of silently
+        # downloading a GitHub HTML 404 page; before that flag was added we
+        # spent a CI cycle chasing why `trivy fs` produced no output.
         env:
-          TRIVY_VERSION: "0.56.2"
+          TRIVY_VERSION: "0.70.0"
         run: |
-          set -e
-          curl -sfL -o trivy.tar.gz \
+          set -euo pipefail
+          curl -fsSL -o trivy.tar.gz \
             "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
           tar -xzf trivy.tar.gz trivy
           sudo mv trivy /usr/local/bin/trivy
@@ -135,6 +139,7 @@ jobs:
         # via SARIF upload. Trivy on application source produces a lot of
         # noise; we want signal in the dashboard, not red builds.
         run: |
+          set -euo pipefail
           trivy fs \
             --severity CRITICAL,HIGH \
             --ignore-unfixed \
@@ -142,10 +147,14 @@ jobs:
             --output trivy-results.sarif \
             --exit-code 0 \
             .
+          ls -lh trivy-results.sarif
 
       - name: Upload Trivy SARIF to Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        # codeql-action v3 deprecates in Dec 2026; v4 is the current line.
+        # `hashFiles(...) != ''` guards against uploading when the scan step
+        # failed before writing the SARIF.
+        uses: github/codeql-action/upload-sarif@v4
+        if: hashFiles('trivy-results.sarif') != ''
         with:
           sarif_file: trivy-results.sarif
           category: trivy-fs
