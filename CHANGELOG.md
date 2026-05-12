@@ -5,6 +5,97 @@ All notable changes to `neviri-cli` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added (Phase 3, in progress)
+
+- **Standalone binaries** (Story 16) — single-file PyInstaller bundles for
+  Linux / macOS-x86_64 / macOS-arm64 / Windows-x86_64 built on every tag push
+  and attached to the GitHub Release. No Python install required to run.
+  Approximate sizes: ~20MB Windows, ~40-60MB Linux/macOS.
+- `[binary]` optional dependency group in `pyproject.toml` pulls in
+  PyInstaller for local builds: `pip install -e ".[binary]" &&
+  pyinstaller pyinstaller.spec --clean`.
+- Smoke test on each built binary verifies `--version`, `--help`, and the
+  completion-script branch all work without Python on `PATH`.
+
+## [0.9.0b1] - 2026-05-11
+
+Phase 2 exit: public beta. 100% backend route parity verified by CI. **Not for
+production use** — exit codes, output schemas, and command names are still
+subject to change until 1.0.0. The 0.9.x series is a beta line that may include
+breaking changes before GA.
+
+### Added
+
+- **`neviri db`** — managed database lifecycle for MongoDB / MySQL / PostgreSQL
+  - `list / get / status / flavors` (read)
+  - `create` with `--password-stdin` for safe DB-admin-password input
+  - `delete / scale` with confirmation prompts
+  - `backup / backups / backup-delete` (universal `/backup/*` endpoint, dispatches by engine)
+  - `restore / restore-status`
+- **`neviri object`** — S3-compatible buckets + objects
+  - `bucket list / get / create / delete` with `-m KEY=VAL` metadata
+  - `list / put / get / delete` with byte-level progress bars via `rich.Progress`
+  - Upload streams off disk via httpx multipart; download streams via httpx `iter_bytes`
+- **`neviri lb`** — load balancers
+  - LB CRUD + `update` with `--admin-up/--admin-down`
+  - `listener / pool / health-monitor` subgroups
+  - Pool members: `member-list / member-add / member-remove`
+  - Protocol and algorithm strings auto-upcased so `--protocol http` works
+- **`neviri app`** — application deployment
+  - App CRUD + `upload` (ZIP with progress bar)
+  - `deployments` lists per-app deployments
+  - `env-list / env-set KEY=VAL / env-unset` for environment variables
+- **`neviri deploy`** — deployment stages
+  - Per-stage triggers: `build / deploy / service / ingress`
+  - `run` chains all 4 stages
+  - `get / manifests` for status + K8s YAML
+  - `logs` with `--follow` (polling) and `--tail N`
+- **`neviri credit`** — credit balance, history, status, and Razorpay top-up
+  - `top-up --amount N --yes` creates a Razorpay order; user completes in browser
+- **`neviri payment`** — payment history, summaries, PDF downloads (receipt / invoice / monthly-invoice)
+  - `method status / list / delete` for saved payment method management
+  - `method add` errors with a pointer to the web UI (Razorpay JS SDK is browser-only)
+- **`neviri completion`** — shell completion script generator
+  - Supports `bash / zsh / fish / powershell / pwsh`
+  - Install snippets documented in `docs/getting-started.md`
+- **Redaction layer** — sensitive fields masked in CLI output
+  - Always redacted: `password`, `razorpay_payment_id`, `razorpay_signature`, DB admin passwords, verification tokens
+  - Preserved: card brand / last4 / expiry, `razorpay_order_id`, `razorpay_key_id`, email, name
+- **Backend parity test** — CI-enforced guarantee
+  - 190 backend routes; every one is either mapped to a CLI command (63%) or in `EXCLUDED` with rationale (37%)
+  - Drift detection: stale `ROUTE_MAP` / `EXCLUDED` entries fail CI
+  - Refresh via `python scripts/refresh-openapi-snapshot.py`
+- **Coverage gate raised** from 90% to **97%** (current: 98.73%)
+- **Docs site** at `docs.neviri.com/cli` built from `mkdocs-material`
+
+### Changed
+
+- Default coverage gate in `pyproject.toml`: `--cov-fail-under=97`
+- Test count: **576 tests** (was 272 at Phase 1 exit)
+
+### Decisions
+
+- [ADR 0003](docs/decisions/0003-phase-2-exit.md): Phase 2 exit scope and deviations from original task list
+
+### Known limitations
+
+These were either deferred by design (per ADR 0003) or are blocked on backend
+work we explicitly agreed not to do:
+
+- **Refresh-token auto-refresh** — auth service supports it (built in Phase 0), but CLI uses simple 24h JWT. Add when dogfooders demand it.
+- **`neviri auth token create/list/delete`** — API tokens are *consumed* (env var, `--api-token`) but not yet CRUD'd via CLI.
+- **`neviri db <engine> --wait` / progress streaming for backup/restore** — backend has no job-id or progress endpoint.
+- **`neviri db <engine> resize` validation against source plan** — backend handles plan validation; CLI just surfaces the response.
+- **`neviri volume resize`** — no backend endpoint.
+- **`neviri object` resumable upload** — backend has no Range / multipart-complete protocol.
+- **`neviri app logs / restart`** — no backend endpoints.
+- **`neviri deploy rollback`** — no backend endpoint; the hidden command errors with manual-rollback instructions.
+- **`neviri deploy logs -f` real streaming** — backend has no streaming endpoint; the CLI polls `build_log` every `--interval` seconds.
+- **Custom value completers** (profile/region/IDs) on shell completion — static completion works; live-fetch completers deferred.
+- **Image upload, support, blog, network routers** — out of CLI Phase 2 scope (rationale in `tests/parity/route_map.py`).
+
 ## [0.1.0a1] - 2026-05-10
 
 First internal alpha. Compute and networking workflows are usable end-to-end
@@ -54,4 +145,5 @@ guarantees on commands, output schemas, or exit codes until 1.0.0.
 - No standalone binaries — Phase 3 ships PyInstaller bundles, Homebrew tap, and self-update.
 - No telemetry — opt-in collection lands in Phase 3.
 
+[0.9.0b1]: https://github.com/ArcLogiQ/neviri-cli/releases/tag/v0.9.0b1
 [0.1.0a1]: https://github.com/ArcLogiQ/neviri-cli/releases/tag/v0.1.0a1

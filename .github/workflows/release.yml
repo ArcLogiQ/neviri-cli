@@ -1,20 +1,14 @@
 name: Release
 
-# Phase 1: cuts an alpha by tagging `vX.Y.Z(aN|bN|rcN)?` on master and:
-#   1. builds a wheel + sdist
-#   2. uploads them as a GitHub Release artefact
-#   3. publishes to a PyPI index
+# On a `v*` tag push:
+#   1. build wheel + sdist
+#   2. build standalone PyInstaller binaries on linux/macos-x64/macos-arm64/windows
+#   3. smoke-test each binary (--version + --help)
+#   4. attach everything to the GitHub Release
+#   5. publish wheel + sdist to PyPI (configure path A or B below)
 #
-# IMPORTANT — before flipping this on you must do ONE of:
-#   (a) Internal/private index (default for Phase 1 alpha):
-#       Set the `repository-url` step input below to the index URL, and
-#       define `PYPI_API_TOKEN` as a repository secret pointing at that index.
-#   (b) Public PyPI (Phase 3 / GA):
-#       Configure trusted publishing on https://pypi.org/manage/account/publishing/
-#       for project `neviri-cli`, environment `pypi`, and remove the
-#       password input below (OIDC will take over via id-token).
-#
-# The job will refuse to publish until ONE of the two paths is configured.
+# Binary distribution: ~20MB on Windows; ~40-60MB on Linux/macOS depending on
+# Python/library size. Documented in CHANGELOG release notes per version.
 
 on:
   push:
@@ -32,7 +26,7 @@ permissions:
   id-token: write
 
 jobs:
-  build:
+  build-dists:
     name: Build wheel + sdist
     runs-on: ubuntu-latest
     steps:
@@ -73,9 +67,62 @@ jobs:
           path: dist/
           retention-days: 7
 
+  build-binaries:
+    name: Build binary (${{ matrix.label }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest,  label: linux-x86_64,    artifact: neviri-linux-x86_64,   ext: ""    }
+          - { os: macos-13,       label: macos-x86_64,    artifact: neviri-macos-x86_64,   ext: ""    }
+          - { os: macos-14,       label: macos-arm64,     artifact: neviri-macos-arm64,    ext: ""    }
+          - { os: windows-latest, label: windows-x86_64,  artifact: neviri-windows-x86_64, ext: ".exe" }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[binary]"
+
+      - name: Build with PyInstaller
+        run: pyinstaller pyinstaller.spec --clean --noconfirm
+
+      - name: Smoke test (binary runs)
+        shell: bash
+        run: |
+          BIN="./dist/neviri${{ matrix.ext }}"
+          chmod +x "$BIN" || true
+          "$BIN" --version
+          "$BIN" --help > /dev/null
+          # Confirm Python is NOT being resolved from PATH - the binary
+          # is self-contained.
+          "$BIN" completion bash > /dev/null
+
+      - name: Rename for release
+        shell: bash
+        run: |
+          mv "./dist/neviri${{ matrix.ext }}" "./dist/${{ matrix.artifact }}${{ matrix.ext }}"
+          ls -lh "./dist/${{ matrix.artifact }}${{ matrix.ext }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}${{ matrix.ext }}
+          retention-days: 7
+
   github-release:
     name: Attach to GitHub Release
-    needs: build
+    needs: [build-dists, build-binaries]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
@@ -83,8 +130,11 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: dist
-          path: dist/
+          path: artifacts/
+          merge-multiple: true
+
+      - name: List artifacts
+        run: ls -lh artifacts/
 
       - name: Determine pre-release status
         id: prerelease
@@ -97,19 +147,126 @@ jobs:
 
       - uses: softprops/action-gh-release@v2
         with:
-          files: dist/*
+          files: artifacts/*
           generate_release_notes: true
           prerelease: ${{ steps.prerelease.outputs.value }}
 
+  bump-homebrew-tap:
+    name: Bump Homebrew formula in ArcLogiQ/homebrew-tap
+    needs: [github-release]
+    runs-on: ubuntu-latest
+    # Only stable releases bump Homebrew — pre-releases (alpha/beta/rc) keep
+    # the tap on the last stable so `brew install neviri` doesn't grab a
+    # beta by surprise.
+    if: |
+      startsWith(github.ref, 'refs/tags/v') &&
+      !contains(github.ref, 'a') && !contains(github.ref, 'b') && !contains(github.ref, 'rc')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+          merge-multiple: true
+
+      - name: Compute SHA256 for each binary
+        id: shas
+        run: |
+          set -e
+          TAG="${GITHUB_REF#refs/tags/}"
+          VERSION="${TAG#v}"
+          ARM_MAC=$(sha256sum artifacts/neviri-macos-arm64 | awk '{print $1}')
+          X64_MAC=$(sha256sum artifacts/neviri-macos-x86_64 | awk '{print $1}')
+          LIN=$(sha256sum artifacts/neviri-linux-x86_64 | awk '{print $1}')
+          echo "tag=$TAG"           >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION"   >> "$GITHUB_OUTPUT"
+          echo "sha_macos_arm64=$ARM_MAC" >> "$GITHUB_OUTPUT"
+          echo "sha_macos_x86_64=$X64_MAC" >> "$GITHUB_OUTPUT"
+          echo "sha_linux_x86_64=$LIN"     >> "$GITHUB_OUTPUT"
+
+      - name: Render formula
+        run: |
+          TAG="${{ steps.shas.outputs.tag }}"
+          VERSION="${{ steps.shas.outputs.version }}"
+          BASE="https://github.com/${{ github.repository }}/releases/download/$TAG"
+          cat > rendered-neviri.rb <<EOF
+          class Neviri < Formula
+            desc "Official command-line interface for the Neviri Cloud Platform"
+            homepage "https://github.com/${{ github.repository }}"
+            version "$VERSION"
+            license "Apache-2.0"
+
+            on_macos do
+              on_arm do
+                url "$BASE/neviri-macos-arm64"
+                sha256 "${{ steps.shas.outputs.sha_macos_arm64 }}"
+              end
+              on_intel do
+                url "$BASE/neviri-macos-x86_64"
+                sha256 "${{ steps.shas.outputs.sha_macos_x86_64 }}"
+              end
+            end
+
+            on_linux do
+              url "$BASE/neviri-linux-x86_64"
+              sha256 "${{ steps.shas.outputs.sha_linux_x86_64 }}"
+            end
+
+            def install
+              if OS.mac? && Hardware::CPU.arm?
+                bin.install "neviri-macos-arm64" => "neviri"
+              elsif OS.mac?
+                bin.install "neviri-macos-x86_64" => "neviri"
+              else
+                bin.install "neviri-linux-x86_64" => "neviri"
+              end
+            end
+
+            test do
+              assert_match version.to_s, shell_output("#{bin}/neviri --version")
+            end
+          end
+          EOF
+          cat rendered-neviri.rb
+
+      - name: Open PR on Homebrew tap
+        # Push the new formula to ArcLogiQ/homebrew-tap on a branch named for
+        # the tag and open a PR. Maintainer merges manually. (Direct commits
+        # to master would also work; PR keeps a human in the loop.)
+        env:
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          set -e
+          TAG="${{ steps.shas.outputs.tag }}"
+          BRANCH="bump-neviri-$TAG"
+          git config --global user.name "neviri-cli release bot"
+          git config --global user.email "bot@neviri.example"
+          git clone "https://x-access-token:$TAP_TOKEN@github.com/ArcLogiQ/homebrew-tap.git" tap
+          cd tap
+          mkdir -p Formula
+          cp ../rendered-neviri.rb Formula/neviri.rb
+          git checkout -B "$BRANCH"
+          git add Formula/neviri.rb
+          git commit -m "neviri $TAG"
+          git push --force origin "$BRANCH"
+          # Use the GitHub CLI to open the PR if not already open.
+          GH_TOKEN="$TAP_TOKEN" gh pr create \
+            --repo ArcLogiQ/homebrew-tap \
+            --title "neviri $TAG" \
+            --body "Bumps neviri to $TAG. Artefacts attached to https://github.com/${{ github.repository }}/releases/tag/$TAG" \
+            --head "$BRANCH" \
+            --base master \
+            || echo "PR may already exist for $BRANCH; skipping."
+
   publish-pypi:
-    name: Publish to PyPI index
-    needs: build
+    name: Publish wheel + sdist to PyPI
+    needs: build-dists
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     environment:
       name: pypi
-      # Set this to your private index URL when alpha-publishing internally;
-      # public PyPI is the eventual GA target.
+      # Set to your private/internal index URL when alpha-publishing;
+      # public PyPI is the GA target.
       url: ${{ vars.PYPI_PROJECT_URL || 'https://pypi.org/p/neviri-cli' }}
     steps:
       - uses: actions/download-artifact@v4
@@ -120,9 +277,9 @@ jobs:
       - name: Publish
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          # Pick ONE of the two publish paths (see header comment).
+          # Pick ONE of the two publish paths:
           #
-          # (a) Token-based (private/internal index):
+          # (a) Token-based (private/internal index OR test.pypi.org):
           # password: ${{ secrets.PYPI_API_TOKEN }}
           # repository-url: ${{ vars.PYPI_REPOSITORY_URL }}
           #
