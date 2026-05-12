@@ -2,25 +2,28 @@
 
 Used by:
 - ``commands/payment.py`` for Razorpay credential triples on order/verify responses
-- ``commands/_common.py`` (future) when ``--debug`` dumps full request/response
-  payloads (Phase 3 security hardening per Story 19)
+- ``client/base.py`` when ``--debug`` dumps full request/response payloads and
+  headers (Phase 3 security hardening per Story 19)
 
 Design choices documented in CHANGELOG / ADR:
 - **Credentials are redacted** (passwords, Razorpay payment_id, Razorpay
-  signature, JWT-equivalent secrets).
+  signature, JWT-equivalent secrets, auth headers).
 - **Display fields are preserved** (card_last4, card_brand, card_exp_*,
   razorpay_order_id, razorpay_key_id, email, name). Users need these to
   identify their own cards/orders and to complete Razorpay flows.
 - Key matching is case-insensitive and underscore-insensitive
-  (``razorpayPaymentId`` and ``razorpay_payment_id`` both hit).
+  (``razorpayPaymentId`` and ``razorpay_payment_id`` both hit). Hyphens and
+  colons are also stripped so HTTP headers (``X-Api-Key``, ``Set-Cookie``)
+  match the same canonical form.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
-# Canonical form: lowercase, no underscores. Add carefully — over-redaction
-# breaks UX (e.g. redacting "token" would break `neviri auth token`).
+# Canonical form: lowercase, no underscores/hyphens/spaces. Add carefully —
+# over-redaction breaks UX (e.g. redacting "token" would break
+# `neviri auth token` and Razorpay's response display).
 SENSITIVE_KEYS: frozenset[str] = frozenset(
     {
         # User secrets
@@ -42,6 +45,19 @@ SENSITIVE_KEYS: frozenset[str] = frozenset(
         # Verification tokens (one-time-use but still sensitive)
         "verificationtoken",
         "resetpasswordtoken",
+        # HTTP auth headers + their stable cousins. Redacted whenever
+        # headers are dumped via --debug.
+        "authorization",
+        "proxyauthorization",
+        "cookie",
+        "setcookie",
+        "xapikey",
+        "xauthtoken",
+        "xaccesstoken",
+        # JSON token fields that show up in auth response bodies
+        "accesstoken",
+        "refreshtoken",
+        "idtoken",
     }
 )
 
@@ -49,7 +65,7 @@ REDACTED_PLACEHOLDER = "***"
 
 
 def _normalize(key: str) -> str:
-    return key.replace("_", "").replace("-", "").lower()
+    return key.replace("_", "").replace("-", "").replace(" ", "").lower()
 
 
 def is_sensitive_key(key: str) -> bool:

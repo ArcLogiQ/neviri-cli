@@ -46,6 +46,13 @@ dev = [
     "respx>=0.21",
     "types-PyYAML>=6.0",
 ]
+security = [
+    # Phase 3 / Story 19 security tooling. Installed in the Security workflow,
+    # not in the default dev shell — keeps the editor extra small.
+    "bandit[toml]>=1.7",
+    "pip-audit>=2.7",
+    "cyclonedx-bom>=4.0",
+]
 docs = [
     "mkdocs>=1.6",
     "mkdocs-material>=9.5",
@@ -103,6 +110,19 @@ ignore = []
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["B011"]
+
+[tool.bandit]
+# Bandit configuration (Phase 3 / Story 19 — static security analysis).
+#
+# We run bandit on src/ only. Test code uses `assert` (B101) and `subprocess`
+# helpers (B404/B603/B607) by design.
+exclude_dirs = ["tests", ".venv", "build", "dist"]
+# B101 (assert_used) — assertions are fine in source; mypy enforces type
+#                     guarantees, asserts are runtime sanity checks.
+# B404 (import_subprocess) + B603/B607 — subprocess only used in the
+#                     PyInstaller self-update path; arguments are constructed
+#                     from controlled values.
+skips = ["B101", "B404", "B603", "B607"]
 
 [tool.mypy]
 python_version = "3.11"

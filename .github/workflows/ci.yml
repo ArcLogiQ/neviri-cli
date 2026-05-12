@@ -65,3 +65,61 @@ jobs:
 
       - name: pytest
         run: pytest
+
+  startup-perf:
+    name: Cold-start benchmark (hyperfine)
+    needs: lint
+    runs-on: ubuntu-latest
+    # Phase 3 / Story 20 — assert the dev-install cold-start budget under a
+    # statistical benchmark (10 warmups + 50 runs). The deterministic
+    # "no heavy imports allowed" contract lives in tests/test_startup_perf.py
+    # and runs on every platform; this job adds a stricter walltime check
+    # on a known runner.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Install hyperfine
+        run: |
+          wget -q https://github.com/sharkdp/hyperfine/releases/download/v1.18.0/hyperfine_1.18.0_amd64.deb
+          sudo dpkg -i hyperfine_1.18.0_amd64.deb
+
+      - name: Benchmark `neviri --version`
+        # 500ms budget for `pip install`-style dev installs on a clean
+        # GitHub Actions runner. Binary (PyInstaller) installs are checked
+        # separately in the release workflow.
+        run: |
+          hyperfine \
+            --warmup 10 \
+            --runs 50 \
+            --export-markdown bench-version.md \
+            --export-json bench-version.json \
+            'neviri --version'
+          cat bench-version.md
+          python - <<'PY'
+          import json, sys
+          with open("bench-version.json") as f:
+              data = json.load(f)
+          mean_ms = data["results"][0]["mean"] * 1000
+          print(f"mean: {mean_ms:.1f}ms")
+          assert mean_ms < 500, f"cold-start regression: {mean_ms:.1f}ms > 500ms budget"
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: startup-benchmark
+          path: |
+            bench-version.md
+            bench-version.json
+          retention-days: 30

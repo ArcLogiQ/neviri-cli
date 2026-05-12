@@ -50,10 +50,35 @@ def test_display_fields_not_sensitive() -> None:
     assert not is_sensitive_key("currency")
 
 
-def test_token_field_not_redacted_by_default() -> None:
-    """`neviri auth token` prints the JWT; don't mask all 'token' fields."""
+def test_bare_token_field_not_redacted_by_default() -> None:
+    """`neviri auth token` prints the JWT; don't mask the bare 'token' key.
+
+    Qualified forms (access_token / refresh_token / id_token) ARE sensitive
+    so HTTP debug dumps don't leak them — see Story 19.
+    """
     assert not is_sensitive_key("token")
-    assert not is_sensitive_key("refreshToken")
+
+
+def test_qualified_token_fields_are_sensitive() -> None:
+    """Story 19: access/refresh/id token fields appear in HTTP debug dumps
+    and must be redacted."""
+    assert is_sensitive_key("access_token")
+    assert is_sensitive_key("accessToken")
+    assert is_sensitive_key("refresh_token")
+    assert is_sensitive_key("refreshToken")
+    assert is_sensitive_key("id_token")
+
+
+def test_auth_headers_are_sensitive() -> None:
+    """Story 19: HTTP auth headers must be redacted when --debug dumps them."""
+    assert is_sensitive_key("authorization")
+    assert is_sensitive_key("Authorization")
+    assert is_sensitive_key("Proxy-Authorization")
+    assert is_sensitive_key("Cookie")
+    assert is_sensitive_key("Set-Cookie")
+    assert is_sensitive_key("X-Api-Key")
+    assert is_sensitive_key("X-Auth-Token")
+    assert is_sensitive_key("X-Access-Token")
 
 
 def test_verification_tokens_are_sensitive() -> None:

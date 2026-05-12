@@ -66,7 +66,7 @@ def login(
 
     try:
         if api_token is not None:
-            if api_token == "-":
+            if api_token == "-":  # nosec B105 - stdin sentinel, not a credential
                 api_token = sys.stdin.readline().strip()
             if not api_token:
                 raise UserError("API token cannot be empty")

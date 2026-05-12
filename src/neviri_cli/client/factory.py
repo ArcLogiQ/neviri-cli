@@ -32,4 +32,4 @@ def make_client(ctx: typer.Context) -> BaseClient:
             f"Not logged in (profile: {obj.profile}). "
             "Run `neviri auth login` or set $NEVIRI_API_TOKEN."
         )
-    return BaseClient(base_url=profile.api_url, token=token)
+    return BaseClient(base_url=profile.api_url, token=token, debug=obj.debug)

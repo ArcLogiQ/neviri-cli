@@ -1,20 +1,124 @@
 name: Security
 
-# Phase 3 deliverable - currently a stub.
-# Will run bandit, pip-audit, and trivy on the binary.
+# Phase 3 / Story 19 — security hardening pipeline.
+#
+# Runs three independent scanners:
+#   1. bandit       — Python static analysis on src/
+#   2. pip-audit    — dependency vulnerabilities (PyPI advisories)
+#   3. trivy        — filesystem scan covering the lockfile + project tree
+#
+# All scanners run on every push to master AND on a weekly schedule so we
+# pick up newly-published advisories without code churn.
+#
+# Each job uploads its SARIF/JSON report as a workflow artifact for review.
 
 on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
   workflow_dispatch:
   schedule:
     - cron: "0 6 * * 1"  # Mondays 06:00 UTC
 
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
+  # Required for SARIF uploads via github/codeql-action/upload-sarif.
+  security-events: write
 
 jobs:
-  security:
+  bandit:
+    name: Bandit (static analysis)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Stub
-        run: echo "Security pipeline not yet implemented (Phase 3)."
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[security]"
+
+      - name: Run bandit
+        # Config lives in [tool.bandit] in pyproject.toml.
+        run: |
+          bandit -r src/ -c pyproject.toml -f json -o bandit-report.json
+          bandit -r src/ -c pyproject.toml
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bandit-report
+          path: bandit-report.json
+          retention-days: 30
+
+  pip-audit:
+    name: pip-audit (dependency vulnerabilities)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[security]"
+
+      - name: Run pip-audit
+        # pip-audit reads installed-package metadata from the venv, so we audit
+        # the EXACT resolution that would ship in a release. Non-zero exit if
+        # any vulnerable dep is found.
+        run: pip-audit --format columns --strict
+
+      - name: Run pip-audit (JSON report)
+        if: always()
+        run: pip-audit --format json --output pip-audit-report.json || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pip-audit-report
+          path: pip-audit-report.json
+          retention-days: 30
+
+  trivy:
+    name: Trivy (filesystem scan)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          # Don't fail the build on findings — they appear in Security tab via
+          # SARIF upload. Trivy on application source produces a lot of noise
+          # (templates, examples, etc.); we want signal in the dashboard,
+          # not red builds.
+          exit-code: "0"
+
+      - name: Upload Trivy SARIF to Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-fs

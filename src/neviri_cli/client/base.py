@@ -6,6 +6,8 @@ Wraps httpx with:
 - request-id capture from the backend's `X-Request-ID` response header
 - Backend response-wrapper unwrap for `{status, data, message}` array responses
 - Typed CLI exceptions per the exit-code contract (see `exceptions.py`)
+- Optional `--debug` request/response trace to stderr, with credentials
+  redacted via :mod:`neviri_cli.utils.redact`
 
 The CLI is a pure HTTP client by architectural rule (proposal section 4.1) -
 no business logic, no OpenStack SDK calls, no DB connections.
@@ -13,6 +15,8 @@ no business logic, no OpenStack SDK calls, no DB connections.
 
 from __future__ import annotations
 
+import json
+import sys
 import time
 from typing import Any
 
@@ -25,6 +29,7 @@ from neviri_cli.exceptions import (
     ServerError,
     UserError,
 )
+from neviri_cli.utils.redact import redact
 
 
 def unwrap_response(payload: Any) -> Any:
@@ -60,6 +65,7 @@ class BaseClient:
         retry_backoff: float = 0.25,
         user_agent: str | None = None,
         transport: httpx.BaseTransport | None = None,
+        debug: bool = False,
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._token = token
@@ -67,6 +73,7 @@ class BaseClient:
         self._max_retries = max(0, max_retries)
         self._retry_backoff = retry_backoff
         self._last_request_id: str | None = None
+        self._debug = debug
 
         headers: dict[str, str] = {
             "Accept": "application/json",
@@ -115,6 +122,8 @@ class BaseClient:
     def request(self, method: str, path: str, **kwargs: Any) -> Any:
         attempt = 0
         last_response: httpx.Response | None = None
+        if self._debug:
+            self._debug_request(method, path, kwargs)
         while True:
             try:
                 response = self._client.request(method, path, **kwargs)
@@ -133,6 +142,9 @@ class BaseClient:
                 raise NetworkError(f"network error: {exc}") from exc
 
             self._last_request_id = response.headers.get("x-request-id")
+
+            if self._debug:
+                self._debug_response(response)
 
             if response.status_code < 400:
                 return self._parse_body(response)
@@ -192,3 +204,53 @@ class BaseClient:
                 if isinstance(value, str):
                     return value
         return None
+
+    # --- debug logging --------------------------------------------------
+
+    def _debug_request(self, method: str, path: str, kwargs: dict[str, Any]) -> None:
+        """Dump the outbound request to stderr with credentials redacted.
+
+        Output is human-readable, not machine-parseable. The goal is to make
+        diagnosing CLI/backend mismatches obvious without leaking secrets.
+        """
+        url = path if path.startswith("http") else f"{self._base_url}{path}"
+        headers = self._merged_headers(kwargs.get("headers"))
+        body = kwargs.get("json") if "json" in kwargs else kwargs.get("data")
+        self._debug_emit(f"--> {method.upper()} {url}", headers=headers, body=body)
+
+    def _debug_response(self, response: httpx.Response) -> None:
+        """Dump the inbound response to stderr with credentials redacted."""
+        body: Any
+        try:
+            body = response.json()
+        except ValueError:
+            # Truncate non-JSON bodies to keep terminals readable.
+            text = response.text
+            body = text if len(text) <= 500 else f"{text[:500]}... [truncated]"
+        self._debug_emit(
+            f"<-- {response.status_code} {response.reason_phrase}",
+            headers=dict(response.headers),
+            body=body,
+        )
+
+    def _merged_headers(self, override: Any) -> dict[str, str]:
+        merged: dict[str, str] = {str(k): str(v) for k, v in self._client.headers.items()}
+        if isinstance(override, dict):
+            for k, v in override.items():
+                merged[str(k)] = str(v)
+        return merged
+
+    @staticmethod
+    def _debug_emit(line: str, *, headers: dict[str, str], body: Any) -> None:
+        print(line, file=sys.stderr)
+        for k, v in redact(headers).items():
+            print(f"    {k}: {v}", file=sys.stderr)
+        if body is None or body == "":
+            return
+        redacted_body = redact(body)
+        try:
+            rendered = json.dumps(redacted_body, indent=2, default=str)
+        except (TypeError, ValueError):
+            rendered = repr(redacted_body)
+        for line_out in rendered.splitlines():
+            print(f"    {line_out}", file=sys.stderr)

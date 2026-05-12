@@ -23,8 +23,8 @@ from neviri_cli.client.base import BaseClient
 from neviri_cli.credentials import get_token_store
 from neviri_cli.exceptions import AuthError
 
-ENV_TOKEN = "NEVIRI_API_TOKEN"
-API_TOKEN_PREFIX = "nvr_"
+ENV_TOKEN = "NEVIRI_API_TOKEN"  # nosec B105 - env var name, not a credential
+API_TOKEN_PREFIX = "nvr_"  # nosec B105 - token prefix, not a credential
 
 
 def get_active_token(profile: str) -> str | None:

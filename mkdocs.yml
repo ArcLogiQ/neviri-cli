@@ -38,6 +38,7 @@ theme:
 nav:
   - Home: index.md
   - Getting started: getting-started.md
+  - Privacy: privacy.md
   - Decisions:
       - "ADR 0001: VM surface": decisions/0001-vm-surface.md
       - "ADR 0002: Phase 1 alpha cut": decisions/0002-phase-1-alpha-cut.md
