@@ -23,7 +23,7 @@ with this exact payload:
 | Field | Example | Description |
 |---|---|---|
 | `command` | `"vm"` | The top-level subcommand (one of: `auth`, `config`, `vm`, `volume`, `network`, `subnet`, `floating-ip`, `db`, `object`, `lb`, `app`, `deploy`, `credit`, `payment`, `completion`, `version`). Never arguments, flag values, IDs, or any user-supplied string. |
-| `cli_version` | `"0.9.0b1"` | The release of `neviri` you're running. |
+| `cli_version` | `"1.0.0"` | The release of `neviri` you're running. |
 | `os` | `"linux"` / `"darwin"` / `"windows"` | The platform name. No version, no kernel detail. |
 | `install_id` | `"7b2f5e1c-3a4d-..."` | A UUIDv4 generated locally when you opted in. It is NOT derived from your account, email, hostname, MAC address, or anything else identifying. It lives in `~/.neviri/config.toml` and you can rotate it by deleting that file. |
 

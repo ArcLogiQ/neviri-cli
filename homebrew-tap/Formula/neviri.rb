@@ -13,22 +13,22 @@
 class Neviri < Formula
   desc "Official command-line interface for the Neviri Cloud Platform"
   homepage "https://github.com/ArcLogiQ/neviri-cli"
-  version "0.9.0b1"
+  version "1.0.0"
   license "Apache-2.0"
 
   on_macos do
     on_arm do
-      url "https://github.com/ArcLogiQ/neviri-cli/releases/download/v0.9.0b1/neviri-macos-arm64"
+      url "https://github.com/ArcLogiQ/neviri-cli/releases/download/v1.0.0/neviri-macos-arm64"
       sha256 "PLACEHOLDER_FILLED_BY_CI"
     end
     on_intel do
-      url "https://github.com/ArcLogiQ/neviri-cli/releases/download/v0.9.0b1/neviri-macos-x86_64"
+      url "https://github.com/ArcLogiQ/neviri-cli/releases/download/v1.0.0/neviri-macos-x86_64"
       sha256 "PLACEHOLDER_FILLED_BY_CI"
     end
   end
 
   on_linux do
-    url "https://github.com/ArcLogiQ/neviri-cli/releases/download/v0.9.0b1/neviri-linux-x86_64"
+    url "https://github.com/ArcLogiQ/neviri-cli/releases/download/v1.0.0/neviri-linux-x86_64"
     sha256 "PLACEHOLDER_FILLED_BY_CI"
   end
 
