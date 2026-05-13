@@ -36,7 +36,7 @@ Binaries are self-contained — no Python install required. Approximate sizes:
 ### Option B — From PyPI
 
 ```bash
-pip install --index-url https://test.pypi.org/simple/ "neviri-cli==0.9.0b1"
+pip install neviri-cli
 ```
 
 ### Option C — From source
@@ -53,7 +53,7 @@ Verify any path with:
 
 ```bash
 neviri --version
-# neviri 0.9.0b1
+# neviri 1.0.0
 ```
 
 ## 2. Configure your environment

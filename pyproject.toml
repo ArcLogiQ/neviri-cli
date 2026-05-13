@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "neviri-cli"
-version = "0.9.0b1"
+version = "1.0.0"
 description = "Official command-line interface for the Neviri Cloud Platform."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -15,7 +15,7 @@ authors = [
 ]
 keywords = ["neviri", "cli", "cloud", "openstack", "infrastructure"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",

@@ -7,17 +7,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added (Phase 3, in progress)
+_Nothing pending._
+
+## [1.0.0] - 2026-05-13
+
+Phase 3 exit: **General Availability**. Exit codes, output schemas, and
+command names are stable from this point on. Breaking changes ship only in a
+new major version.
+
+### Added
 
 - **Standalone binaries** (Story 16) — single-file PyInstaller bundles for
   Linux / macOS-x86_64 / macOS-arm64 / Windows-x86_64 built on every tag push
   and attached to the GitHub Release. No Python install required to run.
   Approximate sizes: ~20MB Windows, ~40-60MB Linux/macOS.
-- `[binary]` optional dependency group in `pyproject.toml` pulls in
-  PyInstaller for local builds: `pip install -e ".[binary]" &&
-  pyinstaller pyinstaller.spec --clean`.
-- Smoke test on each built binary verifies `--version`, `--help`, and the
-  completion-script branch all work without Python on `PATH`.
+  - `[binary]` optional dependency group in `pyproject.toml` pulls in
+    PyInstaller for local builds.
+  - Smoke test on each built binary verifies `--version`, `--help`, and the
+    completion-script branch all work without Python on `PATH`.
+- **Homebrew tap + self-update** (Story 17) — `brew install
+  ArcLogiQ/tap/neviri` and `neviri version --upgrade`.
+  - GitHub Releases API query + version comparison handling
+    `a < b < rc < final` ordering.
+  - Cross-platform replace: POSIX uses `os.replace`; Windows uses a `.bat`
+    helper that swaps the locked `.exe` after the current process exits.
+  - Release workflow auto-generates the formula from rendered SHA256s and
+    opens a PR on `ArcLogiQ/homebrew-tap` for stable releases only.
+- **Opt-in telemetry** (Story 18) — single-file audit surface at
+  `src/neviri_cli/utils/telemetry.py`.
+  - Default OFF. Prompts on the first interactive non-quiet command, defaults
+    to **No**.
+  - Exact payload: `command`, `cli_version`, `os`, `install_id` (locally
+    generated UUIDv4). Nothing else.
+  - Always disabled when `NEVIRI_TELEMETRY=disable`, `CI=true`, or stdin/stderr
+    isn't a TTY.
+  - Fire-and-forget daemon thread with 2-second timeout; all errors swallowed
+    so telemetry can never crash or block the CLI.
+  - `neviri config set telemetry false` flips it instantly.
+  - Documented in `docs/privacy.md`.
+- **Security hardening** (Story 19) — full security pipeline.
+  - **bandit** static analysis on `src/`, with `[tool.bandit]` config and
+    line-level `# nosec` annotations for the 7 false positives (env var
+    names, JSON field names, intentional broad-except for telemetry).
+  - **pip-audit** dependency vulnerability scanning on every push + PR +
+    weekly cron. Audits the declared runtime deps from `pyproject.toml`.
+  - **trivy** filesystem scan with SARIF upload to the GitHub Security tab.
+  - **CycloneDX SBOM** generated per release and attached as an artifact
+    (`neviri-cli-sbom.json`).
+  - **Sigstore cosign keyless signing** for every release artifact via
+    GitHub Actions OIDC. Each binary ships with matching `.sig` and `.crt`
+    files; verify via `cosign verify-blob ...`.
+  - `--debug` request/response logging now redacts auth headers
+    (`Authorization`, `Cookie`, `Set-Cookie`, `X-Api-Key`, …), passwords,
+    and qualified token fields (`access_token`, `refresh_token`, `id_token`)
+    via the existing redaction layer. Safe to share `neviri --debug` output
+    in bug reports.
+- **Cold-start performance pass** (Story 20) — lazy subcommand loading.
+  - 14 subcommand groups + 2 leaf commands resolve on demand via a custom
+    `_LazyTyperGroup` subclass — Click only imports the module of the
+    subcommand the user actually invoked.
+  - `output/__init__.py` defers `_table` / `_yaml` / `_json` imports inside
+    `render()`, so `rich` and `PyYAML` no longer load on `import
+    neviri_cli.output`.
+  - Result: `neviri --version` cold start ~1000ms → ~280ms in dev mode
+    (3.5x improvement).
+  - Determinism contract pinned by `tests/test_startup_perf.py`: 13 heavy
+    modules (httpx, keyring, rich.progress, every heavy `commands/*` module)
+    MUST NOT appear in `sys.modules` after `import neviri_cli.app` or after
+    `app(['--version'])`.
+  - CI runs `hyperfine` with 10 warmups + 50 runs and asserts mean < 500ms.
+
+### Changed
+
+- Development status classifier promoted from `3 - Alpha` →
+  `5 - Production/Stable`.
+- Install path simplified: `pip install neviri-cli` from public PyPI; the
+  Phase 2 test.pypi.org URL is no longer needed.
 
 ## [0.9.0b1] - 2026-05-11
 
@@ -145,5 +210,6 @@ guarantees on commands, output schemas, or exit codes until 1.0.0.
 - No standalone binaries — Phase 3 ships PyInstaller bundles, Homebrew tap, and self-update.
 - No telemetry — opt-in collection lands in Phase 3.
 
+[1.0.0]: https://github.com/ArcLogiQ/neviri-cli/releases/tag/v1.0.0
 [0.9.0b1]: https://github.com/ArcLogiQ/neviri-cli/releases/tag/v0.9.0b1
 [0.1.0a1]: https://github.com/ArcLogiQ/neviri-cli/releases/tag/v0.1.0a1

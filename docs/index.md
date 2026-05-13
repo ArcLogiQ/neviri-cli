@@ -2,10 +2,10 @@
 
 Official command-line interface for the [Neviri Cloud Platform](https://neviri.com).
 
-!!! warning "Status: 0.9.0b1 (public beta)"
-    Not for production use. Exit codes, output schemas, and command names
-    are still subject to change until 1.0.0. The 0.9.x line is a beta — we
-    may ship breaking changes before GA.
+!!! success "Status: 1.0.0 (stable)"
+    Exit codes, output schemas, and command names are stable from 1.0.0
+    onward. Breaking changes will only ship in major versions per semver.
+    See the [CHANGELOG](changelog.md) for what landed in each release.
 
 ## What it does
 
@@ -25,7 +25,7 @@ in the dashboard, you can do with `neviri`:
 ## 30-second start
 
 ```bash
-pip install --index-url https://test.pypi.org/simple/ "neviri-cli==0.9.0b1"
+pip install neviri-cli
 neviri config set api_url https://api.neviri.com
 neviri config set auth_url https://iam.neviri.com
 neviri auth login --email you@example.com

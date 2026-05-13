@@ -2,7 +2,7 @@
 
 Official command-line interface for the [Neviri Cloud Platform](https://neviri.com).
 
-> **Status:** Public beta (`0.9.0b1`). Phase 2 of the architecture proposal is complete — 100% backend route parity verified by CI. **Not for production use.** Exit codes, output schemas, and command names are still subject to change until 1.0.0.
+> **Status:** Stable (`1.0.0`). All three phases of the architecture proposal are complete: 100% backend route parity verified by CI, opt-in telemetry, full security pipeline (bandit + pip-audit + trivy + Sigstore signing + CycloneDX SBOM), and a sub-500ms cold-start budget enforced by hyperfine in CI. Exit codes, output schemas, and command names are stable from 1.0.0 onward.
 
 ## What it does
 
@@ -25,8 +25,16 @@ Exit codes: 0 success, 1 generic, 2 user error, 3 auth, 4 network, 5 server.
 ## Install
 
 ```bash
-pip install --index-url https://test.pypi.org/simple/ "neviri-cli==0.9.0b1"
+pip install neviri-cli
 ```
+
+Or via Homebrew on macOS / Linux:
+
+```bash
+brew install ArcLogiQ/tap/neviri
+```
+
+Or grab a standalone binary from the [latest release](https://github.com/ArcLogiQ/neviri-cli/releases/latest) (no Python required).
 
 Or from source:
 
