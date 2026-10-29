@@ -90,3 +90,79 @@ def test_make_client_scopes_token_per_profile(isolated_home: Path) -> None:
         assert client._client.headers["Authorization"] == "Bearer stg-token"  # type: ignore[reportPrivateUsage]
     finally:
         client.close()
+
+
+def test_management_key_uses_profile_bindings_and_disables_replay(isolated_home: Path) -> None:
+    from neviri_cli.config import CLIConfig, ProfileConfig, save_config
+
+    save_config(
+        CLIConfig(
+            profiles={
+                "staging": ProfileConfig(
+                    api_url="https://stagingapi.neviri.com",
+                    project_id="91",
+                    environment="development",
+                )
+            }
+        )
+    )
+    store_token("staging", "nvk_test.placeholder")
+    with make_client(_ctx("staging")) as client:
+        assert client._client.headers["X-Neviri-Project"] == "91"
+        assert client._client.headers["X-Neviri-Environment"] == "development"
+        assert client._max_retries == 0
+
+
+def test_management_key_env_overrides_profile_bindings(
+    isolated_home: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from neviri_cli.config import CLIConfig, ProfileConfig, save_config
+
+    save_config(
+        CLIConfig(
+            profiles={
+                "default": ProfileConfig(
+                    api_url="https://api.example.com",
+                    project_id="old",
+                    environment="old",
+                )
+            }
+        )
+    )
+    monkeypatch.setenv("NEVIRI_API_TOKEN", "nvk_test.placeholder")
+    monkeypatch.setenv("NEVIRI_PROJECT_ID", "91")
+    monkeypatch.setenv("NEVIRI_ENVIRONMENT", "development")
+    with make_client(_ctx()) as client:
+        assert client._client.headers["X-Neviri-Project"] == "91"
+        assert client._client.headers["X-Neviri-Environment"] == "development"
+
+
+@pytest.mark.parametrize(
+    "bindings",
+    [
+        {},
+        {"NEVIRI_PROJECT_ID": "91"},
+        {"NEVIRI_ENVIRONMENT": "test"},
+        {"NEVIRI_PROJECT_ID": "91\n", "NEVIRI_ENVIRONMENT": "test"},
+    ],
+)
+def test_management_key_rejects_missing_or_invalid_bindings(
+    isolated_home: Path, monkeypatch: pytest.MonkeyPatch, bindings: dict[str, str]
+) -> None:
+    monkeypatch.setenv("NEVIRI_API_TOKEN", "nvk_test.placeholder")
+    monkeypatch.delenv("NEVIRI_PROJECT_ID", raising=False)
+    monkeypatch.delenv("NEVIRI_ENVIRONMENT", raising=False)
+    for key, value in bindings.items():
+        monkeypatch.setenv(key, value)
+    with pytest.raises(AuthError):
+        make_client(_ctx())
+
+
+def test_management_key_requires_https(
+    isolated_home: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("NEVIRI_API_TOKEN", "nvk_test.placeholder")
+    monkeypatch.setenv("NEVIRI_PROJECT_ID", "91")
+    monkeypatch.setenv("NEVIRI_ENVIRONMENT", "development")
+    with pytest.raises(AuthError, match="HTTPS"):
+        make_client(_ctx())

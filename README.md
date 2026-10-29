@@ -60,6 +60,32 @@ neviri object bucket list
 
 Full walkthrough in [docs/getting-started.md](docs/getting-started.md).
 
+## Scoped management credentials
+
+After deploying the backend resource-scope support, a session-delegated
+management token can use existing VM, volume, app and object commands. Store it
+through your secret manager or the existing token store; `NEVIRI_API_TOKEN`
+overrides the stored token. Keep downloaded key files outside the repository.
+
+Configure the non-secret bindings from that key's `projectId` and `environment`:
+
+```sh
+neviri config use-context staging
+neviri config set api_url https://stagingapi.neviri.com
+neviri config set project_id YOUR_PROJECT_ID
+neviri config set environment development
+neviri vm list
+```
+
+`NEVIRI_PROJECT_ID` and `NEVIRI_ENVIRONMENT` override profile bindings. Delegated
+keys require HTTPS and both bindings. Permissions are exact: `compute`,
+`storage`, `apps`, or `objects` with `:read`, `:write`, or `:delete` for the
+corresponding HTTP operation. Catalog-only keys retain their existing grants.
+These credentials expire with their owning session and do not support unattended
+use. Automatic retries are disabled for management credentials; reconcile
+list/status before repeating a write whose outcome is unknown. JWT login and
+existing JWT command behavior are preserved.
+
 ## Backend route parity
 
 The CLI carries a hard guarantee — every backend endpoint is either wrapped

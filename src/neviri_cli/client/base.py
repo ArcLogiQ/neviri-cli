@@ -60,6 +60,8 @@ class BaseClient:
         base_url: str,
         *,
         token: str | None = None,
+        project_id: str | None = None,
+        environment: str | None = None,
         timeout: float = 30.0,
         max_retries: int = 3,
         retry_backoff: float = 0.25,
@@ -81,6 +83,11 @@ class BaseClient:
         }
         if token:
             headers["Authorization"] = f"Bearer {token}"
+
+        if project_id is not None:
+            headers["X-Neviri-Project"] = project_id
+        if environment is not None:
+            headers["X-Neviri-Environment"] = environment
 
         self._client = httpx.Client(
             base_url=self._base_url,
