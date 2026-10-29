@@ -78,7 +78,9 @@ neviri vm list
 ```
 
 `NEVIRI_PROJECT_ID` and `NEVIRI_ENVIRONMENT` override profile bindings. Delegated
-keys require HTTPS and both bindings. Permissions are exact: `compute`,
+keys require HTTPS and both bindings. API URLs reject URL credentials, query
+strings, fragments and invalid hosts/ports so HTTPX cannot replace Bearer auth
+with URL-derived Basic auth. Permissions are exact: `compute`,
 `storage`, `apps`, or `objects` with `:read`, `:write`, or `:delete` for the
 corresponding HTTP operation. Catalog-only keys retain their existing grants.
 These credentials expire with their owning session and do not support unattended

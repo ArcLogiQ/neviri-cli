@@ -166,3 +166,63 @@ def test_management_key_requires_https(
     monkeypatch.setenv("NEVIRI_ENVIRONMENT", "development")
     with pytest.raises(AuthError, match="HTTPS"):
         make_client(_ctx())
+
+
+@pytest.mark.parametrize(
+    "api_url",
+    [
+        "https://user:pass@example.test",
+        "https://user@example.test",
+        "https://@example.test",
+        "https://example.test?key=fixture",
+        "https://example.test#fixture",
+        "https://",
+        "https://example.test:invalid",
+        "https://example.test:65536",
+        "https://example.test/\n",
+    ],
+)
+def test_management_key_rejects_conflicting_or_invalid_url(
+    isolated_home: Path, monkeypatch: pytest.MonkeyPatch, api_url: str
+) -> None:
+    from neviri_cli.config import CLIConfig, ProfileConfig, save_config
+
+    save_config(CLIConfig(profiles={"default": ProfileConfig(api_url=api_url)}))
+    monkeypatch.setenv("NEVIRI_API_TOKEN", "nvk_fixture.placeholder")
+    monkeypatch.setenv("NEVIRI_PROJECT_ID", "91")
+    monkeypatch.setenv("NEVIRI_ENVIRONMENT", "development")
+    with pytest.raises(AuthError) as error:
+        make_client(_ctx())
+    assert "user:pass" not in str(error.value)
+
+
+def test_management_key_prepared_request_keeps_bearer_auth(
+    isolated_home: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import httpx
+
+    from neviri_cli.client import factory
+    from neviri_cli.config import CLIConfig, ProfileConfig, save_config
+
+    save_config(CLIConfig(profiles={"default": ProfileConfig(api_url="HTTPS://example.test")}))
+    monkeypatch.setenv("NEVIRI_API_TOKEN", "nvk_fixture.placeholder")
+    monkeypatch.setenv("NEVIRI_PROJECT_ID", "91")
+    monkeypatch.setenv("NEVIRI_ENVIRONMENT", "development")
+    real_client = factory.BaseClient
+    calls = []
+
+    def reply(request):
+        calls.append(request)
+        return httpx.Response(200, json=[])
+
+    monkeypatch.setattr(
+        factory,
+        "BaseClient",
+        lambda **kwargs: real_client(**kwargs, transport=httpx.MockTransport(reply)),
+    )
+    with make_client(_ctx()) as client:
+        assert client.get("/api/v1/compute/servers") == []
+    assert len(calls) == 1
+    assert calls[0].headers["Authorization"] == "Bearer nvk_fixture.placeholder"
+    assert calls[0].headers["X-Neviri-Project"] == "91"
+    assert calls[0].headers["X-Neviri-Environment"] == "development"
