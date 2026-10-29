@@ -7,6 +7,9 @@ token from the keyring/file/env priority chain, and constructs a
 
 from __future__ import annotations
 
+import os
+from urllib.parse import urlsplit
+
 import typer
 
 from neviri_cli.auth import get_active_token
@@ -14,6 +17,30 @@ from neviri_cli.client.base import BaseClient
 from neviri_cli.config import get_profile, load_config
 from neviri_cli.context import CLIContext
 from neviri_cli.exceptions import AuthError
+
+
+def _management_api_url(value: str) -> str:
+    """Validate the management API boundary before HTTPX can infer URL auth."""
+    try:
+        url = urlsplit(value)
+        if url.scheme != "https":
+            raise AuthError("Management credentials require an HTTPS API URL.")
+        if (
+            not url.hostname
+            or url.username is not None
+            or url.password is not None
+            or url.query
+            or url.fragment
+            or any(character.isspace() or ord(character) < 32 for character in value)
+        ):
+            raise ValueError
+        # Accessing port validates malformed/out-of-range port specifications.
+        _ = url.port
+    except ValueError:
+        raise AuthError(
+            "Invalid management API URL; use HTTPS without URL credentials, query or fragment."
+        ) from None
+    return url.geturl()
 
 
 def make_client(ctx: typer.Context) -> BaseClient:
@@ -31,5 +58,25 @@ def make_client(ctx: typer.Context) -> BaseClient:
         raise AuthError(
             f"Not logged in (profile: {obj.profile}). "
             "Run `neviri auth login` or set $NEVIRI_API_TOKEN."
+        )
+    if token.startswith("nvk_"):
+        project_id = os.environ.get("NEVIRI_PROJECT_ID", profile.project_id)
+        environment = os.environ.get("NEVIRI_ENVIRONMENT", profile.environment)
+        if not project_id or not environment:
+            raise AuthError(
+                "Management credentials require project_id and environment in the profile "
+                "or NEVIRI_PROJECT_ID and NEVIRI_ENVIRONMENT."
+            )
+        if any(character in project_id + environment for character in "\r\n"):
+            raise AuthError("Invalid management credential bindings.")
+        api_url = _management_api_url(profile.api_url)
+        # Ambiguous writes must be reconciled, never replayed automatically.
+        return BaseClient(
+            base_url=api_url,
+            token=token,
+            debug=obj.debug,
+            project_id=project_id,
+            environment=environment,
+            max_retries=0,
         )
     return BaseClient(base_url=profile.api_url, token=token, debug=obj.debug)

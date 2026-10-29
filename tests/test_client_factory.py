@@ -90,3 +90,139 @@ def test_make_client_scopes_token_per_profile(isolated_home: Path) -> None:
         assert client._client.headers["Authorization"] == "Bearer stg-token"  # type: ignore[reportPrivateUsage]
     finally:
         client.close()
+
+
+def test_management_key_uses_profile_bindings_and_disables_replay(isolated_home: Path) -> None:
+    from neviri_cli.config import CLIConfig, ProfileConfig, save_config
+
+    save_config(
+        CLIConfig(
+            profiles={
+                "staging": ProfileConfig(
+                    api_url="https://stagingapi.neviri.com",
+                    project_id="91",
+                    environment="development",
+                )
+            }
+        )
+    )
+    store_token("staging", "nvk_test.placeholder")
+    with make_client(_ctx("staging")) as client:
+        assert client._client.headers["X-Neviri-Project"] == "91"
+        assert client._client.headers["X-Neviri-Environment"] == "development"
+        assert client._max_retries == 0
+
+
+def test_management_key_env_overrides_profile_bindings(
+    isolated_home: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from neviri_cli.config import CLIConfig, ProfileConfig, save_config
+
+    save_config(
+        CLIConfig(
+            profiles={
+                "default": ProfileConfig(
+                    api_url="https://api.example.com",
+                    project_id="old",
+                    environment="old",
+                )
+            }
+        )
+    )
+    monkeypatch.setenv("NEVIRI_API_TOKEN", "nvk_test.placeholder")
+    monkeypatch.setenv("NEVIRI_PROJECT_ID", "91")
+    monkeypatch.setenv("NEVIRI_ENVIRONMENT", "development")
+    with make_client(_ctx()) as client:
+        assert client._client.headers["X-Neviri-Project"] == "91"
+        assert client._client.headers["X-Neviri-Environment"] == "development"
+
+
+@pytest.mark.parametrize(
+    "bindings",
+    [
+        {},
+        {"NEVIRI_PROJECT_ID": "91"},
+        {"NEVIRI_ENVIRONMENT": "test"},
+        {"NEVIRI_PROJECT_ID": "91\n", "NEVIRI_ENVIRONMENT": "test"},
+    ],
+)
+def test_management_key_rejects_missing_or_invalid_bindings(
+    isolated_home: Path, monkeypatch: pytest.MonkeyPatch, bindings: dict[str, str]
+) -> None:
+    monkeypatch.setenv("NEVIRI_API_TOKEN", "nvk_test.placeholder")
+    monkeypatch.delenv("NEVIRI_PROJECT_ID", raising=False)
+    monkeypatch.delenv("NEVIRI_ENVIRONMENT", raising=False)
+    for key, value in bindings.items():
+        monkeypatch.setenv(key, value)
+    with pytest.raises(AuthError):
+        make_client(_ctx())
+
+
+def test_management_key_requires_https(
+    isolated_home: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("NEVIRI_API_TOKEN", "nvk_test.placeholder")
+    monkeypatch.setenv("NEVIRI_PROJECT_ID", "91")
+    monkeypatch.setenv("NEVIRI_ENVIRONMENT", "development")
+    with pytest.raises(AuthError, match="HTTPS"):
+        make_client(_ctx())
+
+
+@pytest.mark.parametrize(
+    "api_url",
+    [
+        "https://user:pass@example.test",
+        "https://user@example.test",
+        "https://@example.test",
+        "https://example.test?key=fixture",
+        "https://example.test#fixture",
+        "https://",
+        "https://example.test:invalid",
+        "https://example.test:65536",
+        "https://example.test/\n",
+    ],
+)
+def test_management_key_rejects_conflicting_or_invalid_url(
+    isolated_home: Path, monkeypatch: pytest.MonkeyPatch, api_url: str
+) -> None:
+    from neviri_cli.config import CLIConfig, ProfileConfig, save_config
+
+    save_config(CLIConfig(profiles={"default": ProfileConfig(api_url=api_url)}))
+    monkeypatch.setenv("NEVIRI_API_TOKEN", "nvk_fixture.placeholder")
+    monkeypatch.setenv("NEVIRI_PROJECT_ID", "91")
+    monkeypatch.setenv("NEVIRI_ENVIRONMENT", "development")
+    with pytest.raises(AuthError) as error:
+        make_client(_ctx())
+    assert "user:pass" not in str(error.value)
+
+
+def test_management_key_prepared_request_keeps_bearer_auth(
+    isolated_home: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import httpx
+
+    from neviri_cli.client import factory
+    from neviri_cli.config import CLIConfig, ProfileConfig, save_config
+
+    save_config(CLIConfig(profiles={"default": ProfileConfig(api_url="HTTPS://example.test")}))
+    monkeypatch.setenv("NEVIRI_API_TOKEN", "nvk_fixture.placeholder")
+    monkeypatch.setenv("NEVIRI_PROJECT_ID", "91")
+    monkeypatch.setenv("NEVIRI_ENVIRONMENT", "development")
+    real_client = factory.BaseClient
+    calls = []
+
+    def reply(request):
+        calls.append(request)
+        return httpx.Response(200, json=[])
+
+    monkeypatch.setattr(
+        factory,
+        "BaseClient",
+        lambda **kwargs: real_client(**kwargs, transport=httpx.MockTransport(reply)),
+    )
+    with make_client(_ctx()) as client:
+        assert client.get("/api/v1/compute/servers") == []
+    assert len(calls) == 1
+    assert calls[0].headers["Authorization"] == "Bearer nvk_fixture.placeholder"
+    assert calls[0].headers["X-Neviri-Project"] == "91"
+    assert calls[0].headers["X-Neviri-Environment"] == "development"

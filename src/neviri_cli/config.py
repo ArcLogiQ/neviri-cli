@@ -41,6 +41,10 @@ class ProfileConfig(BaseModel):
     auth_url: str = "http://localhost:8081"
     output: OutputFormat = "table"
 
+    # Non-secret bindings for scoped management credentials.
+    project_id: str | None = None
+    environment: str | None = None
+
     # Identity cache populated at login time so `neviri auth whoami`
     # doesn't have to make a network call.
     user_id: int | None = None
