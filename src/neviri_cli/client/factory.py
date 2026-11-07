@@ -26,6 +26,13 @@ def make_client(ctx: typer.Context) -> BaseClient:
     assert isinstance(obj, CLIContext)
     cfg = load_config()
     profile = get_profile(cfg, obj.profile)
+    if profile.auth_mode == "iam":
+        # Lazy: legacy invocations do not load IAM providers or call IAM.
+        from neviri_cli.iam import resolve_iam_token, validate_iam_origin
+
+        validate_iam_origin(profile.api_url)
+        iam_token = resolve_iam_token(obj.profile, profile, debug=obj.debug)
+        return BaseClient(base_url=profile.api_url, token=iam_token, debug=obj.debug)
     token = get_active_token(obj.profile)
     if not token:
         raise AuthError(

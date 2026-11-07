@@ -14,7 +14,14 @@ import typing
 
 import typer
 
-from neviri_cli.config import CLIConfig, ProfileConfig, get_profile, load_config, save_config
+from neviri_cli.config import (
+    CLIConfig,
+    ProfileConfig,
+    get_profile,
+    load_config,
+    profile_payload,
+    save_config,
+)
 from neviri_cli.context import CLIContext
 
 config_app = typer.Typer(
@@ -146,7 +153,7 @@ def list_config(ctx: typer.Context) -> None:
         typer.echo(f"install_id = {cfg.install_id}")
     for name, profile in cfg.profiles.items():
         typer.echo(f"\n[{name}]")
-        for k, v in profile.model_dump(exclude_none=True).items():
+        for k, v in profile_payload(profile).items():
             typer.echo(f"  {k} = {v}")
 
 

@@ -48,6 +48,7 @@ SENSITIVE_KEYS: frozenset[str] = frozenset(
         # HTTP auth headers + their stable cousins. Redacted whenever
         # headers are dumped via --debug.
         "authorization",
+        "idempotencykey",
         "proxyauthorization",
         "cookie",
         "setcookie",
@@ -58,6 +59,13 @@ SENSITIVE_KEYS: frozenset[str] = frozenset(
         "accesstoken",
         "refreshtoken",
         "idtoken",
+        # IAM long-lived and temporary credential material.
+        "secretaccesskey",
+        "mfacode",
+        "secret",
+        "provisioninguri",
+        "sessiontoken",
+        "input",  # validation error payloads may echo a submitted credential
     }
 )
 

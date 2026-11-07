@@ -21,6 +21,8 @@ from __future__ import annotations
 # (method, path) -> short string describing the CLI surface that wraps it.
 # Multiple routes can share the same CLI command (e.g. flavors GET).
 ROUTE_MAP: dict[tuple[str, str], str] = {
+    ("GET", "/api/v1/compute/iam/operations/{operation_id}"): "iam operation-status",
+    ("GET", "/api/v1/catalog/releases/{release_id}/status"): "catalog release-status",
     # ---------- compute (neviri vm) ----------
     ("GET", "/api/v1/compute/servers"): "vm list",
     ("POST", "/api/v1/compute/servers"): "vm create",

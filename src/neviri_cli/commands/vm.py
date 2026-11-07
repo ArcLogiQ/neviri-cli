@@ -209,6 +209,10 @@ def start_vm(
 def stop_vm(
     ctx: typer.Context,
     server_id: Annotated[str, typer.Argument(help="Server ID.")],
+    idempotency_key: Annotated[
+        str | None,
+        typer.Option("--idempotency-key", help="Required for IAM STOP; reuse for retries."),
+    ] = None,
 ) -> None:
     """Stop a running VM.
 
@@ -217,6 +221,20 @@ def stop_vm(
         neviri vm stop abc-123
     """
     try:
+        from neviri_cli.commands._common import get_cli_ctx
+        from neviri_cli.config import get_profile, load_config
+
+        cli = get_cli_ctx(ctx)
+        profile = get_profile(load_config(), cli.profile)
+        if profile.auth_mode == "iam":
+            from neviri_cli.iam_operations import stop_server
+
+            emit(
+                ctx, stop_server(cli.profile, profile, server_id, idempotency_key, debug=cli.debug)
+            )
+            return
+        if idempotency_key is not None:
+            raise UserError("--idempotency-key is supported only for explicit IAM profiles")
         emit(ctx, _compute(ctx).server_action(server_id, "stop"))
     except NeviriCLIError as exc:
         handle_cli_error(exc)
