@@ -13,8 +13,9 @@ command they can hardcode in dotfiles without depending on Typer flag names.
 
 from __future__ import annotations
 
+import importlib
 from enum import StrEnum
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
 import typer.main
@@ -24,11 +25,8 @@ import typer.main
 # invoked the program via `python -m typer ...`). When *we* generate the
 # script directly, we need to trigger that registration ourselves. Internal
 # API but stable across typer >=0.12 — verified against typer 0.25.
-from typer._completion_classes import completion_init
-
-completion_init()
-
-from click.shell_completion import get_completion_class  # noqa: E402
+_completion_classes = importlib.import_module("typer._completion_classes")
+_completion_classes.completion_init()
 
 from neviri_cli.exceptions import UserError, handle_cli_error  # noqa: E402
 
@@ -42,6 +40,13 @@ class Shell(StrEnum):
     fish = "fish"
     powershell = "powershell"
     pwsh = "pwsh"
+
+
+def get_completion_class(shell: str) -> Any:
+    # Resolve the same registry Typer registered above. Newer Typer versions
+    # vendor Click, while older versions use the external Click package.
+    registry = importlib.import_module(_completion_classes.add_completion_class.__module__)
+    return registry.get_completion_class(shell)
 
 
 def make_completion_script(shell: str) -> str:

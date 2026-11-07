@@ -1,6 +1,16 @@
 [
   {
     "method": "GET",
+    "path": "/api/v1/compute/iam/operations/{operation_id}",
+    "source": "app/iam/vm_actions.py"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/catalog/releases/{release_id}/status",
+    "source": "app/routers/catalog.py"
+  },
+  {
+    "method": "GET",
     "path": "/api/v1/apps",
     "source": "app/routers/apps.py"
   },

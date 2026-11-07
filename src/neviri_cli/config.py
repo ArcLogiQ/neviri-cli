@@ -24,7 +24,7 @@ from __future__ import annotations
 import os
 import tomllib
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import tomli_w
 from pydantic import BaseModel, ConfigDict, Field
@@ -40,6 +40,15 @@ class ProfileConfig(BaseModel):
     api_url: str = "http://localhost:8000"
     auth_url: str = "http://localhost:8081"
     output: OutputFormat = "table"
+
+    # Absence preserves every existing legacy profile and credential lookup.
+    auth_mode: Literal["legacy", "iam"] = "legacy"
+    iam_url: str = "http://localhost:8011"
+    iam_session_name: str = "cli"
+    iam_role_arn: str | None = None
+    iam_external_id: str | None = None
+    iam_duration_seconds: int = Field(default=900, ge=900, le=43200)
+    iam_session_policy: dict[str, Any] | None = None
 
     # Identity cache populated at login time so `neviri auth whoami`
     # doesn't have to make a network call.
@@ -85,6 +94,7 @@ def save_config(cfg: CLIConfig) -> None:
     path = get_config_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = cfg.model_dump(exclude_none=True)
+    payload["profiles"] = {name: profile_payload(profile) for name, profile in cfg.profiles.items()}
     with path.open("wb") as f:
         tomli_w.dump(payload, f)
     # Best-effort: mark file user-only on POSIX. No-op on Windows.
@@ -97,3 +107,15 @@ def save_config(cfg: CLIConfig) -> None:
 def get_profile(cfg: CLIConfig, name: str) -> ProfileConfig:
     """Return the profile by name, or a fresh ProfileConfig if not present."""
     return cfg.profiles.get(name) or ProfileConfig()
+
+
+def profile_payload(profile: ProfileConfig) -> dict[str, Any]:
+    """Legacy saves/display retain their previous fields until explicit IAM opt-in."""
+    data = profile.model_dump(exclude_none=True)
+    if profile.auth_mode == "legacy":
+        return {
+            key: value
+            for key, value in data.items()
+            if key != "auth_mode" and not key.startswith("iam_")
+        }
+    return data

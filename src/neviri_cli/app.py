@@ -19,7 +19,6 @@ from __future__ import annotations
 import importlib
 from typing import Annotated, Any
 
-import click
 import typer
 import typer.core
 
@@ -30,6 +29,8 @@ from neviri_cli.output import OutputFormat
 # name -> "<module>:<attr>" pointing at a typer.Typer instance.
 # Plain commands (not Typer groups) go in _LAZY_COMMANDS below.
 _LAZY_SUBCOMMANDS: dict[str, str] = {
+    "iam": "neviri_cli.commands.iam:iam_app",
+    "catalog": "neviri_cli.commands.catalog:catalog_app",
     "auth": "neviri_cli.commands.auth:auth_app",
     "config": "neviri_cli.commands.config:config_app",
     "vm": "neviri_cli.commands.vm:vm_app",
@@ -60,11 +61,11 @@ class _LazyTyperGroup(typer.core.TyperGroup):
     preserved.
     """
 
-    def list_commands(self, ctx: click.Context) -> list[str]:
+    def list_commands(self, ctx: Any) -> list[str]:
         eager = set(super().list_commands(ctx))
         return sorted(eager | set(_LAZY_SUBCOMMANDS) | set(_LAZY_COMMANDS))
 
-    def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
+    def get_command(self, ctx: Any, cmd_name: str) -> Any:
         existing = super().get_command(ctx, cmd_name)
         if existing is not None:
             return existing
@@ -84,7 +85,7 @@ def _resolve(spec: str) -> Any:
     return getattr(module, attr)
 
 
-def _command_from_callable(name: str, func: Any) -> click.Command:
+def _command_from_callable(name: str, func: Any) -> Any:
     """Wrap a bare Typer command callable as a click.Command on demand.
 
     Mirrors what Typer does internally when you call ``app.command(name)(func)``
@@ -101,7 +102,8 @@ def _command_from_callable(name: str, func: Any) -> click.Command:
         pass
 
     group = typer.main.get_command(tmp)
-    assert isinstance(group, click.Group)
+    # Typer may vendor Click; use its own group type across both layouts.
+    assert isinstance(group, typer.core.TyperGroup)
     cmd = group.commands[name]
     return cmd
 
